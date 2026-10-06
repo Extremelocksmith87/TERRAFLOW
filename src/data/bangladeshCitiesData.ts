@@ -1,0 +1,807 @@
+export interface BangladeshCity {
+  id: string;
+  name: string;
+  bnName: string;
+  division: string;
+  xPercent: number; // 0% (west) to 100% (east)
+  yPercent: number; // 0% (north) to 100% (south)
+  elevationMeters: number;
+  population: number;
+  isDivisionCapital?: boolean;
+  floodRiskLevel: 'extreme' | 'high' | 'moderate' | 'low';
+  category: 'megacity' | 'port' | 'industrial' | 'district' | 'hill_tract' | 'coastal';
+}
+
+export const BANGLADESH_CITIES: BangladeshCity[] = [
+  // --- DHAKA DIVISION ---
+  {
+    id: 'dhaka',
+    name: 'Dhaka',
+    bnName: 'ঢাকা',
+    division: 'Dhaka',
+    xPercent: 51.5,
+    yPercent: 49.5,
+    elevationMeters: 8,
+    population: 22400000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'high',
+    category: 'megacity'
+  },
+  {
+    id: 'gazipur',
+    name: 'Gazipur',
+    bnName: 'গাজীপুর',
+    division: 'Dhaka',
+    xPercent: 51.8,
+    yPercent: 45.2,
+    elevationMeters: 14,
+    population: 2600000,
+    floodRiskLevel: 'moderate',
+    category: 'industrial'
+  },
+  {
+    id: 'narayanganj',
+    name: 'Narayanganj',
+    bnName: 'নারায়ণগঞ্জ',
+    division: 'Dhaka',
+    xPercent: 53.2,
+    yPercent: 52.0,
+    elevationMeters: 7,
+    population: 1850000,
+    floodRiskLevel: 'high',
+    category: 'industrial'
+  },
+  {
+    id: 'tangail',
+    name: 'Tangail',
+    bnName: 'টাঙ্গাইল',
+    division: 'Dhaka',
+    xPercent: 44.0,
+    yPercent: 41.0,
+    elevationMeters: 15,
+    population: 520000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'faridpur',
+    name: 'Faridpur',
+    bnName: 'ফরিদপুর',
+    division: 'Dhaka',
+    xPercent: 43.5,
+    yPercent: 54.5,
+    elevationMeters: 9,
+    population: 430000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'manikganj',
+    name: 'Manikganj',
+    bnName: 'মানিকগঞ্জ',
+    division: 'Dhaka',
+    xPercent: 45.5,
+    yPercent: 49.0,
+    elevationMeters: 10,
+    population: 310000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'narsingdi',
+    name: 'Narsingdi',
+    bnName: 'নরসিংদী',
+    division: 'Dhaka',
+    xPercent: 56.5,
+    yPercent: 47.5,
+    elevationMeters: 12,
+    population: 460000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'munshiganj',
+    name: 'Munshiganj',
+    bnName: 'মুন্সীগঞ্জ',
+    division: 'Dhaka',
+    xPercent: 52.5,
+    yPercent: 54.0,
+    elevationMeters: 6,
+    population: 380000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'gopalganj',
+    name: 'Gopalganj',
+    bnName: 'গোপালগঞ্জ',
+    division: 'Dhaka',
+    xPercent: 43.0,
+    yPercent: 61.0,
+    elevationMeters: 5,
+    population: 340000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'kishoreganj',
+    name: 'Kishoreganj',
+    bnName: 'কিশোরগঞ্জ',
+    division: 'Dhaka',
+    xPercent: 58.0,
+    yPercent: 39.5,
+    elevationMeters: 13,
+    population: 410000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'madaripur',
+    name: 'Madaripur',
+    bnName: 'মাদারীপুর',
+    division: 'Dhaka',
+    xPercent: 47.0,
+    yPercent: 58.5,
+    elevationMeters: 7,
+    population: 290000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'shariatpur',
+    name: 'Shariatpur',
+    bnName: 'শরীয়তপুর',
+    division: 'Dhaka',
+    xPercent: 49.5,
+    yPercent: 57.5,
+    elevationMeters: 6,
+    population: 260000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'rajbari',
+    name: 'Rajbari',
+    bnName: 'রাজবাড়ী',
+    division: 'Dhaka',
+    xPercent: 39.0,
+    yPercent: 51.0,
+    elevationMeters: 12,
+    population: 240000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+
+  // --- CHATTOGRAM DIVISION ---
+  {
+    id: 'chattogram',
+    name: 'Chattogram',
+    bnName: 'চট্টগ্রাম',
+    division: 'Chattogram',
+    xPercent: 74.0,
+    yPercent: 71.0,
+    elevationMeters: 11,
+    population: 5350000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'high',
+    category: 'port'
+  },
+  {
+    id: 'coxsbazar',
+    name: 'Cox\'s Bazar',
+    bnName: 'কক্সবাজার',
+    division: 'Chattogram',
+    xPercent: 79.5,
+    yPercent: 84.0,
+    elevationMeters: 6,
+    population: 340000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'cumilla',
+    name: 'Cumilla',
+    bnName: 'কুমিল্লা',
+    division: 'Chattogram',
+    xPercent: 62.0,
+    yPercent: 54.0,
+    elevationMeters: 14,
+    population: 820000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'feni',
+    name: 'Feni',
+    bnName: 'ফেনী',
+    division: 'Chattogram',
+    xPercent: 66.5,
+    yPercent: 61.5,
+    elevationMeters: 9,
+    population: 330000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'noakhali',
+    name: 'Noakhali',
+    bnName: 'নোয়াখালী',
+    division: 'Chattogram',
+    xPercent: 61.0,
+    yPercent: 65.5,
+    elevationMeters: 5,
+    population: 490000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'brahmanbaria',
+    name: 'Brahmanbaria',
+    bnName: 'ব্রাহ্মণবাড়িয়া',
+    division: 'Chattogram',
+    xPercent: 62.5,
+    yPercent: 47.0,
+    elevationMeters: 13,
+    population: 410000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'chandpur',
+    name: 'Chandpur',
+    bnName: 'চাঁদপুর',
+    division: 'Chattogram',
+    xPercent: 55.5,
+    yPercent: 59.5,
+    elevationMeters: 6,
+    population: 370000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'lakshmipur',
+    name: 'Lakshmipur',
+    bnName: 'লক্ষ্মীপুর',
+    division: 'Chattogram',
+    xPercent: 57.0,
+    yPercent: 65.0,
+    elevationMeters: 5,
+    population: 310000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'rangamati',
+    name: 'Rangamati',
+    bnName: 'রাঙ্গামাটি',
+    division: 'Chattogram',
+    xPercent: 81.0,
+    yPercent: 68.0,
+    elevationMeters: 68,
+    population: 160000,
+    floodRiskLevel: 'low',
+    category: 'hill_tract'
+  },
+  {
+    id: 'bandarban',
+    name: 'Bandarban',
+    bnName: 'বান্দরবান',
+    division: 'Chattogram',
+    xPercent: 82.5,
+    yPercent: 76.5,
+    elevationMeters: 85,
+    population: 140000,
+    floodRiskLevel: 'low',
+    category: 'hill_tract'
+  },
+  {
+    id: 'khagrachhari',
+    name: 'Khagrachhari',
+    bnName: 'খাগড়াছড়ি',
+    division: 'Chattogram',
+    xPercent: 77.0,
+    yPercent: 59.5,
+    elevationMeters: 54,
+    population: 150000,
+    floodRiskLevel: 'low',
+    category: 'hill_tract'
+  },
+
+  // --- SYLHET DIVISION ---
+  {
+    id: 'sylhet',
+    name: 'Sylhet',
+    bnName: 'সিলেট',
+    division: 'Sylhet',
+    xPercent: 70.0,
+    yPercent: 33.0,
+    elevationMeters: 22,
+    population: 1050000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'extreme',
+    category: 'district'
+  },
+  {
+    id: 'sunamganj',
+    name: 'Sunamganj',
+    bnName: 'সুনামগঞ্জ',
+    division: 'Sylhet',
+    xPercent: 63.5,
+    yPercent: 29.5,
+    elevationMeters: 10,
+    population: 320000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'moulvibazar',
+    name: 'Moulvibazar',
+    bnName: 'মৌলভীবাজার',
+    division: 'Sylhet',
+    xPercent: 70.5,
+    yPercent: 39.5,
+    elevationMeters: 25,
+    population: 290000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'habiganj',
+    name: 'Habiganj',
+    bnName: 'হবিগঞ্জ',
+    division: 'Sylhet',
+    xPercent: 64.5,
+    yPercent: 42.0,
+    elevationMeters: 16,
+    population: 280000,
+    floodRiskLevel: 'extreme',
+    category: 'district'
+  },
+
+  // --- KHULNA DIVISION ---
+  {
+    id: 'khulna',
+    name: 'Khulna',
+    bnName: 'খুলনা',
+    division: 'Khulna',
+    xPercent: 38.0,
+    yPercent: 68.0,
+    elevationMeters: 6,
+    population: 1550000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'extreme',
+    category: 'port'
+  },
+  {
+    id: 'jashore',
+    name: 'Jashore',
+    bnName: 'যশোর',
+    division: 'Khulna',
+    xPercent: 33.5,
+    yPercent: 61.5,
+    elevationMeters: 10,
+    population: 580000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'kushtia',
+    name: 'Kushtia',
+    bnName: 'কুষ্টিয়া',
+    division: 'Khulna',
+    xPercent: 31.0,
+    yPercent: 48.0,
+    elevationMeters: 16,
+    population: 440000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'satkhira',
+    name: 'Satkhira',
+    bnName: 'সাতক্ষীরা',
+    division: 'Khulna',
+    xPercent: 31.5,
+    yPercent: 70.5,
+    elevationMeters: 4,
+    population: 390000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'bagerhat',
+    name: 'Bagerhat',
+    bnName: 'বাগেরহাট',
+    division: 'Khulna',
+    xPercent: 41.5,
+    yPercent: 70.0,
+    elevationMeters: 4,
+    population: 290000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'jhenaidah',
+    name: 'Jhenaidah',
+    bnName: 'ঝিনাইদহ',
+    division: 'Khulna',
+    xPercent: 32.5,
+    yPercent: 55.0,
+    elevationMeters: 13,
+    population: 310000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'chuadanga',
+    name: 'Chuadanga',
+    bnName: 'চুয়াডাঙ্গা',
+    division: 'Khulna',
+    xPercent: 27.5,
+    yPercent: 52.5,
+    elevationMeters: 17,
+    population: 230000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'magura',
+    name: 'Magura',
+    bnName: 'মাগুরা',
+    division: 'Khulna',
+    xPercent: 36.5,
+    yPercent: 56.5,
+    elevationMeters: 11,
+    population: 210000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'narail',
+    name: 'Narail',
+    bnName: 'নড়াইল',
+    division: 'Khulna',
+    xPercent: 38.5,
+    yPercent: 62.0,
+    elevationMeters: 8,
+    population: 190000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'meherpur',
+    name: 'Meherpur',
+    bnName: 'মেহেরপুর',
+    division: 'Khulna',
+    xPercent: 26.0,
+    yPercent: 49.0,
+    elevationMeters: 18,
+    population: 180000,
+    floodRiskLevel: 'low',
+    category: 'district'
+  },
+
+  // --- BARISHAL DIVISION ---
+  {
+    id: 'barishal',
+    name: 'Barishal',
+    bnName: 'বরিশাল',
+    division: 'Barishal',
+    xPercent: 49.5,
+    yPercent: 69.5,
+    elevationMeters: 4,
+    population: 620000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'extreme',
+    category: 'port'
+  },
+  {
+    id: 'patuakhali',
+    name: 'Patuakhali',
+    bnName: 'পটুয়াখালী',
+    division: 'Barishal',
+    xPercent: 49.0,
+    yPercent: 77.0,
+    elevationMeters: 4,
+    population: 280000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'bhola',
+    name: 'Bhola',
+    bnName: 'ভোলা',
+    division: 'Barishal',
+    xPercent: 55.0,
+    yPercent: 72.5,
+    elevationMeters: 4,
+    population: 320000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'pirojpur',
+    name: 'Pirojpur',
+    bnName: 'পিরোজপুর',
+    division: 'Barishal',
+    xPercent: 44.5,
+    yPercent: 71.0,
+    elevationMeters: 4,
+    population: 230000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'barguna',
+    name: 'Barguna',
+    bnName: 'বরগুনা',
+    division: 'Barishal',
+    xPercent: 45.5,
+    yPercent: 78.5,
+    elevationMeters: 4,
+    population: 210000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+  {
+    id: 'jhalokathi',
+    name: 'Jhalokathi',
+    bnName: 'ঝালকাঠি',
+    division: 'Barishal',
+    xPercent: 47.0,
+    yPercent: 69.0,
+    elevationMeters: 4.5,
+    population: 180000,
+    floodRiskLevel: 'extreme',
+    category: 'coastal'
+  },
+
+  // --- RAJSHAHI DIVISION ---
+  {
+    id: 'rajshahi',
+    name: 'Rajshahi',
+    bnName: 'রাজশাহী',
+    division: 'Rajshahi',
+    xPercent: 26.5,
+    yPercent: 43.5,
+    elevationMeters: 23,
+    population: 950000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'bogura',
+    name: 'Bogura',
+    bnName: 'বগুড়া',
+    division: 'Rajshahi',
+    xPercent: 38.5,
+    yPercent: 34.0,
+    elevationMeters: 28,
+    population: 780000,
+    floodRiskLevel: 'high',
+    category: 'industrial'
+  },
+  {
+    id: 'pabna',
+    name: 'Pabna',
+    bnName: 'পাবনা',
+    division: 'Rajshahi',
+    xPercent: 35.5,
+    yPercent: 47.5,
+    elevationMeters: 17,
+    population: 410000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'sirajganj',
+    name: 'Sirajganj',
+    bnName: 'সিরাজগঞ্জ',
+    division: 'Rajshahi',
+    xPercent: 42.0,
+    yPercent: 42.5,
+    elevationMeters: 16,
+    population: 360000,
+    floodRiskLevel: 'extreme',
+    category: 'district'
+  },
+  {
+    id: 'naogaon',
+    name: 'Naogaon',
+    bnName: 'নওগাঁ',
+    division: 'Rajshahi',
+    xPercent: 31.0,
+    yPercent: 36.0,
+    elevationMeters: 25,
+    population: 320000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'natore',
+    name: 'Natore',
+    bnName: 'নাটোর',
+    division: 'Rajshahi',
+    xPercent: 33.0,
+    yPercent: 42.0,
+    elevationMeters: 20,
+    population: 260000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'chapainawabganj',
+    name: 'Chapai Nawabganj',
+    bnName: 'চাঁপাইনবাবগঞ্জ',
+    division: 'Rajshahi',
+    xPercent: 21.0,
+    yPercent: 39.5,
+    elevationMeters: 26,
+    population: 290000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'joypurhat',
+    name: 'Joypurhat',
+    bnName: 'জয়পুরহাট',
+    division: 'Rajshahi',
+    xPercent: 33.5,
+    yPercent: 28.5,
+    elevationMeters: 30,
+    population: 210000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+
+  // --- RANGPUR DIVISION ---
+  {
+    id: 'rangpur',
+    name: 'Rangpur',
+    bnName: 'রংপুর',
+    division: 'Rangpur',
+    xPercent: 31.0,
+    yPercent: 21.0,
+    elevationMeters: 34,
+    population: 460000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'dinajpur',
+    name: 'Dinajpur',
+    bnName: 'দিনাজপুর',
+    division: 'Rangpur',
+    xPercent: 24.5,
+    yPercent: 22.0,
+    elevationMeters: 37,
+    population: 360000,
+    floodRiskLevel: 'moderate',
+    category: 'district'
+  },
+  {
+    id: 'kurigram',
+    name: 'Kurigram',
+    bnName: 'কুড়িগ্রাম',
+    division: 'Rangpur',
+    xPercent: 39.5,
+    yPercent: 20.0,
+    elevationMeters: 31,
+    population: 290000,
+    floodRiskLevel: 'extreme',
+    category: 'district'
+  },
+  {
+    id: 'panchagarh',
+    name: 'Panchagarh',
+    bnName: 'পঞ্চগড়',
+    division: 'Rangpur',
+    xPercent: 18.0,
+    yPercent: 10.5,
+    elevationMeters: 55,
+    population: 180000,
+    floodRiskLevel: 'low',
+    category: 'district'
+  },
+  {
+    id: 'thakurgaon',
+    name: 'Thakurgaon',
+    bnName: 'ঠাকুরগাঁও',
+    division: 'Rangpur',
+    xPercent: 21.0,
+    yPercent: 17.5,
+    elevationMeters: 48,
+    population: 220000,
+    floodRiskLevel: 'low',
+    category: 'district'
+  },
+  {
+    id: 'nilphamari',
+    name: 'Nilphamari',
+    bnName: 'নীলফামারী',
+    division: 'Rangpur',
+    xPercent: 27.5,
+    yPercent: 16.5,
+    elevationMeters: 42,
+    population: 240000,
+    floodRiskLevel: 'low',
+    category: 'district'
+  },
+  {
+    id: 'gaibandha',
+    name: 'Gaibandha',
+    bnName: 'গাইবান্ধা',
+    division: 'Rangpur',
+    xPercent: 37.5,
+    yPercent: 26.5,
+    elevationMeters: 29,
+    population: 280000,
+    floodRiskLevel: 'extreme',
+    category: 'district'
+  },
+  {
+    id: 'lalmonirhat',
+    name: 'Lalmonirhat',
+    bnName: 'লালমনিরহাট',
+    division: 'Rangpur',
+    xPercent: 34.0,
+    yPercent: 17.0,
+    elevationMeters: 36,
+    population: 190000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+
+  // --- MYMENSINGH DIVISION ---
+  {
+    id: 'mymensingh',
+    name: 'Mymensingh',
+    bnName: 'ময়মনসিংহ',
+    division: 'Mymensingh',
+    xPercent: 51.0,
+    yPercent: 33.5,
+    elevationMeters: 19,
+    population: 620000,
+    isDivisionCapital: true,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'jamalpur',
+    name: 'Jamalpur',
+    bnName: 'জামালপুর',
+    division: 'Mymensingh',
+    xPercent: 43.5,
+    yPercent: 32.0,
+    elevationMeters: 21,
+    population: 310000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  },
+  {
+    id: 'netrokona',
+    name: 'Netrokona',
+    bnName: 'নেত্রকোণা',
+    division: 'Mymensingh',
+    xPercent: 57.0,
+    yPercent: 32.5,
+    elevationMeters: 16,
+    population: 270000,
+    floodRiskLevel: 'extreme',
+    category: 'district'
+  },
+  {
+    id: 'sherpur',
+    name: 'Sherpur',
+    bnName: 'শেরপুর',
+    division: 'Mymensingh',
+    xPercent: 47.0,
+    yPercent: 28.5,
+    elevationMeters: 24,
+    population: 210000,
+    floodRiskLevel: 'high',
+    category: 'district'
+  }
+];
