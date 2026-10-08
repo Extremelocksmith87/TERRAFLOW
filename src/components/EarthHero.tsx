@@ -67,7 +67,7 @@ export const EarthHero: React.FC<EarthHeroProps> = ({
 
         {/* Subtitle */}
         <p className="mt-4 text-base sm:text-lg text-slate-700 font-medium max-w-xl leading-relaxed bg-white/60 backdrop-blur-xs px-4 py-2 rounded-2xl">
-          Explore real country topographies in 3D, simulate extreme sea level rise from 1 to 3,000 meters, investigate global ice melt, and learn vital flood safety guidelines.
+          Learn about how floods and rainfall in an interactive simulation, investigate ice melt and simulate rainfall.
         </p>
 
         {/* Simulation Options Buttons */}

@@ -342,43 +342,36 @@ export function calculateWeatherFloodImpact(
     floodedPercent = 0.0;
     // atRiskDistricts and floodedZones remain strictly empty!
   } else if (mode === 'heavy_rain') {
-    // Heavy rain: 44 - 200 mm/day (BMD: Heavy 44-88mm, Very Heavy >88mm)
-    // Mountainous regions (Chittagong Hill Tracts & Meghalaya/Assam foothill escarpments)
-    // face drastically higher risks from heavy downpours due to steep slope runoff velocity,
-    // mountain torrents ("Pahari Dhol"), rapid valley flash flooding, and severe mudslides.
+    // Heavy rain: 44 - 200 mm/day (BMD standard: Heavy 44-88mm, Very Heavy >88mm)
+    // No massive regional river submersion (floodedZones remains empty), but steep mountainous
+    // catchments and low-lying haor depressions face localized flash flood torrents ("Pahari Dhol")
+    // marked with careful exclamation alerts and localized water accumulation circles.
     if (rainMagnitudeMm <= 70) {
-      // 44 - 70 mm: "Shows a little flooding" (~2.0% - 3.2% area)
-      // Confined to primary steep mountain valleys & Haor depression beds
       dangerLevel = 'Moderate';
       equivalentSurgeMeters = 0.4;
-      ['bandarban', 'rangamati', 'khagrachhari', 'sunamganj', 'sylhet'].forEach((id) =>
-        atRiskDistricts.add(id)
-      );
-      floodedPercent = Number((1.8 + ((rainMagnitudeMm - 44) / 26) * 1.4).toFixed(1)); // 1.8% - 3.2%
+      floodedPercent = 1.2;
+      [
+        'sunamganj', 'sylhet', 'netrokona', 'bandarban', 'rangamati', 'coxsbazar'
+      ].forEach((id) => atRiskDistricts.add(id));
     } else if (rainMagnitudeMm <= 120) {
-      // 71 - 120 mm: "Heavy rain affects a lot more" (~4.5% - 8.5% area)
-      // Mountain downpour torrents swell foothill rivers into Haor wetlands & coastal valleys
       dangerLevel = 'Severe';
       equivalentSurgeMeters = 0.8;
-      floodedZones.add('0-3'); // low Haor beds & coastal estuarine corridors turn blue
+      floodedPercent = 2.4;
       [
-        'bandarban', 'rangamati', 'khagrachhari', 'chattogram', 'coxsbazar',
-        'sylhet', 'sunamganj', 'netrokona', 'moulvibazar', 'habiganj',
-        'sherpur', 'kurigram', 'gaibandha', 'feni'
+        'sunamganj', 'sylhet', 'netrokona', 'moulvibazar', 'habiganj',
+        'bandarban', 'rangamati', 'khagrachhari', 'coxsbazar', 'chattogram',
+        'kurigram', 'sherpur'
       ].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = Number((4.5 + ((rainMagnitudeMm - 71) / 49) * 4.0).toFixed(1)); // 4.5% - 8.5%
     } else {
-      // 121 - 200 mm: Torrential cloudburst deluge affecting a lot more across entire mountain basins and floodplains
       dangerLevel = 'Catastrophic';
       equivalentSurgeMeters = 1.4;
-      floodedZones.add('0-3'); // widespread Haor & low delta submersion in ocean blue
+      floodedPercent = 4.2;
       [
-        'bandarban', 'rangamati', 'khagrachhari', 'chattogram', 'coxsbazar',
-        'sylhet', 'sunamganj', 'netrokona', 'moulvibazar', 'habiganj',
-        'sherpur', 'kurigram', 'lalmonirhat', 'gaibandha', 'bogura', 'sirajganj',
-        'jamalpur', 'feni', 'cumilla', 'brahmanbaria', 'dhaka', 'narayanganj'
+        'sunamganj', 'sylhet', 'netrokona', 'moulvibazar', 'habiganj',
+        'bandarban', 'rangamati', 'khagrachhari', 'coxsbazar', 'chattogram',
+        'kurigram', 'gaibandha', 'lalmonirhat', 'sherpur', 'feni',
+        'sirajganj', 'bogura'
       ].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = Number((9.0 + ((rainMagnitudeMm - 121) / 79) * 6.5).toFixed(1)); // 9.0% - 15.5%
     }
   } else if (mode === 'monsoon') {
     // Monsoon Deluge: 150 - 600 mm accumulated precipitation + transboundary river confluence
@@ -426,48 +419,58 @@ export function calculateWeatherFloodImpact(
     }
   } else if (mode === 'cyclone') {
     // Tropical Cyclone: Category 1 to 5 Bay of Bengal storm surge
-    // Confined to coastal delta districts (Barguna, Patuakhali, Bhola, Barishal, etc.)
+    // Grounded in IWM/CEGIS coastal models & BMD empirical records:
+    // Barishal is at 4.0m elevation, ~100 km inland along Kirtankhola river.
+    // Cat 1 (1.2m-1.8m surge) & Cat 2 (2.0m-2.8m surge) only inundate exposed outer seaward barrier chars
+    // (outer Barguna, outer Patuakhali/Kuakata, outer Bhola). Barishal remains completely safe and dry!
+    // Cat 3 (3.2m-4.2m surge) floods lower estuarine polders; Barishal is at alert threshold.
+    // Cat 4 (5.5m-7.5m surge) & Cat 5 (7.0m-9.2m surge, e.g. 1970 Bhola) breach inland river embankments and flood Barishal.
     const cat = Math.max(1, Math.min(5, Math.round(cycloneCategory)));
 
     if (cat === 1) {
-      // Cat 1 (119-153 km/h): Surge 1.2m - 1.8m
+      // Cat 1 (119-153 km/h): Surge 1.2m - 1.8m. Storm surge along outer coastal fringes & beaches throughout the coast.
+      // Barishal (4m elevation) remains completely dry!
       dangerLevel = 'Moderate';
       equivalentSurgeMeters = 1.5;
-      ['barguna', 'patuakhali', 'bhola', 'pirojpur', 'barishal'].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = 2.6; // ~3,800 km²
+      ['barguna', 'patuakhali', 'bhola', 'satkhira', 'coxsbazar'].forEach((id) => atRiskDistricts.add(id));
+      floodedPercent = 2.8; // ~4,100 km² slightly enhanced coastal wash
     } else if (cat === 2) {
-      // Cat 2 (154-177 km/h): Surge 2.0m - 2.8m
+      // Cat 2 (154-177 km/h): Surge 2.0m - 2.8m. Inundates exposed coastal mangrove fringes & outer chars throughout coast.
+      // Barishal (4m elevation) remains safe and dry!
       dangerLevel = 'Moderate';
       equivalentSurgeMeters = 2.4;
-      ['barguna', 'patuakhali', 'bhola', 'pirojpur', 'jhalokathi', 'barishal', 'satkhira', 'bagerhat'].forEach(
+      ['barguna', 'patuakhali', 'bhola', 'pirojpur', 'satkhira', 'bagerhat', 'noakhali', 'coxsbazar', 'chattogram'].forEach(
         (id) => atRiskDistricts.add(id)
       );
-      floodedPercent = 4.8; // ~7,000 km²
+      floodedPercent = 5.2; // ~7,600 km²
     } else if (cat === 3) {
-      // Cat 3 (178-208 km/h): Surge 3.0m - 4.5m
+      // Cat 3 (178-208 km/h): Surge 3.2m - 4.2m. Coastal intertidal shelf & lower polders submerged throughout the coast.
+      // Barishal reaches outer tidal warning threshold.
       dangerLevel = 'Severe';
-      equivalentSurgeMeters = 3.8;
-      floodedZones.add('0-3'); // coastal intertidal flats submerged
-      COASTAL_CYCLONE_SURGE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = 8.5; // ~12,500 km²
+      equivalentSurgeMeters = 3.6;
+      [
+        'barguna', 'patuakhali', 'bhola', 'pirojpur', 'satkhira', 'bagerhat',
+        'noakhali', 'lakshmipur', 'coxsbazar', 'chattogram', 'feni'
+      ].forEach((id) => atRiskDistricts.add(id));
+      floodedPercent = 8.9; // ~13,100 km²
     } else if (cat === 4) {
-      // Cat 4 (209-251 km/h): Surge 5.5m - 7.5m (e.g. 1970 Bhola)
+      // Cat 4 (209-251 km/h): Surge 5.5m - 7.5m (e.g. 1970 Bhola, 2007 Sidr).
+      // Monster surge wall overcomes 4m threshold throughout southern delta, pushing up river into Barishal.
       dangerLevel = 'Catastrophic';
       equivalentSurgeMeters = 6.2;
-      floodedZones.add('0-3');
       COASTAL_CYCLONE_SURGE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
       ['chandpur', 'shariatpur', 'madaripur', 'gopalganj'].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = 14.2; // ~21,000 km²
+      floodedPercent = 15.6; // ~23,000 km²
     } else {
-      // Cat 5 (252+ km/h): Surge 7.0m - 9.2m (e.g. 1991 Gorky)
+      // Cat 5 (252+ km/h): Surge 7.0m - 9.2m (e.g. 1991 Gorky, Cat 5 super-cyclones).
+      // Catastrophic tidal wall penetrates deep into southern delta, submerging Barishal completely.
       dangerLevel = 'Catastrophic';
       equivalentSurgeMeters = 8.6;
-      floodedZones.add('0-3');
       COASTAL_CYCLONE_SURGE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
       ['chandpur', 'shariatpur', 'madaripur', 'gopalganj', 'munshiganj', 'narail'].forEach((id) =>
         atRiskDistricts.add(id)
       );
-      floodedPercent = 19.8; // ~29,200 km²
+      floodedPercent = 21.0; // ~31,000 km²
     }
   }
 

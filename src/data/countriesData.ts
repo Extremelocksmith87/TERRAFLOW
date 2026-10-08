@@ -28,9 +28,9 @@ export const COUNTRIES_DATA: CountryFloodData[] = [
       { name: 'Dhaka', x: 0.05, y: 0.02, elevationMeters: 8, population: 22000000, isCapital: true },
       { name: 'Chittagong (Chattogram)', x: 0.35, y: -0.32, elevationMeters: 12, population: 5300000 },
       { name: 'Khulna', x: -0.28, y: -0.25, elevationMeters: 4, population: 1600000 },
-      { name: 'Sylhet', x: 0.38, y: 0.42, elevationMeters: 35, population: 900000 },
-      { name: 'Rajshahi', x: -0.42, y: 0.22, elevationMeters: 18, population: 850000 },
-      { name: 'Barisal', x: -0.05, y: -0.38, elevationMeters: 4, population: 500000 },
+      { name: 'Sylhet', x: 0.38, y: 0.42, elevationMeters: 22, population: 1050000 },
+      { name: 'Rajshahi', x: -0.42, y: 0.22, elevationMeters: 23, population: 950000 },
+      { name: 'Barisal', x: -0.05, y: -0.38, elevationMeters: 4, population: 620000 },
       { name: 'Rangpur', x: -0.32, y: 0.62, elevationMeters: 34, population: 400000 },
       { name: 'Cox\'s Bazar', x: 0.45, y: -0.55, elevationMeters: 6, population: 300000 }
     ],

@@ -295,10 +295,10 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
           <button
             onClick={onGoHome}
             className="btn-cartoon-white px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-xs cursor-pointer hover:bg-slate-50"
-            title="Return to Earth View"
+            title="Return to Main Menu"
           >
             <Globe className="w-3.5 h-3.5 text-sky-600" />
-            <span className="hidden sm:inline">Earth View</span>
+            <span className="hidden sm:inline">Main Menu</span>
           </button>
 
           <button
@@ -530,11 +530,11 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
                       {weatherMode === 'light_rain' &&
                         'Regular daily precipitation is 100% absorbed by soils, agricultural fields, and natural drainage. Causes 0% riverine flood and 0% coastal surge.'}
                       {weatherMode === 'heavy_rain' &&
-                        'Mountainous regions (Chittagong Hill Tracts — Bandarban, Rangamati, Khagrachhari, Cox’s Bazar — and Meghalaya/Assam foothill valleys) suffer the highest risk from heavy downpours. Steep slope gradients trigger rapid mountain stream torrents ("Pahari Dhol"), valley flash floods, and critical landslides. Heavy rain affects 5 to 18 districts across mountain tracts and foothill basins.'}
+                        'Heavy downpours cause drainage waterlogging across all 64 districts nationwide, while steep mountainous regions (Chittagong Hill Tracts and Meghalaya/Assam foothills) face severe flash flood torrents ("Pahari Dhol") and mudslides.'}
                       {weatherMode === 'monsoon' &&
                         'Driven by simultaneous cresting of the Brahmaputra, Ganges, and Meghna rivers (catchments 12x Bangladesh’s size). Floodplains naturally flood 20–22%; historic deluges (1998) reached 68%.'}
                       {weatherMode === 'cyclone' &&
-                        'Tidal storm walls push inland strictly across the southern coastal belt and estuarine islands (2.5% to 20% land area); inland hills and northern plains remain dry.'}
+                        'Tidal storm surges push inland across the southern coastal delta. At Cat 1–3, Barishal (4m elevation) remains safe and dry above surge water; only Cat 4–5 super-cyclones penetrate deep inland.'}
                     </span>
                   </div>
                 </div>

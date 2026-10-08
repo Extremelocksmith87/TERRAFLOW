@@ -104,17 +104,42 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
     }
   }, [displacedPopulation, isDisplacedFocused]);
 
-  // Auto-play flood animation gracefully flowing along exponential curve
+  // Auto-play flood animation gracefully flowing from low sea level to high elevations
   useEffect(() => {
     if (!isPlaying) return;
     const interval = setInterval(() => {
-      const currentSlider = valueToExponentialSlider(seaLevelMeters, maxElev, 7.8);
-      if (currentSlider >= EXP_SLIDER_STEPS) {
+      if (seaLevelMeters >= maxElev) {
         setIsPlaying(false);
         return;
       }
-      const nextSlider = Math.min(EXP_SLIDER_STEPS, currentSlider + 8);
-      const nextVal = exponentialSliderToValue(nextSlider, maxElev, 7.8, 'seaLevel');
+
+      let nextVal: number;
+      if (seaLevelMeters < 1.0) {
+        // Below 1m: advance reliably by 0.1m each tick (prevents getting stuck or failing at < 1m)
+        nextVal = Number((Math.max(0, seaLevelMeters) + 0.1).toFixed(1));
+      } else if (seaLevelMeters < 5.0) {
+        // 1m to 5m: smooth 0.2m progression
+        nextVal = Number((seaLevelMeters + 0.2).toFixed(1));
+      } else if (seaLevelMeters < 25.0) {
+        // 5m to 25m: 0.5m progression
+        nextVal = Number((seaLevelMeters + 0.5).toFixed(1));
+      } else {
+        // Above 25m: exponential scaling to cover all mountain elevations
+        const currentSlider = valueToExponentialSlider(seaLevelMeters, maxElev, 7.8);
+        const nextSlider = Math.min(EXP_SLIDER_STEPS, currentSlider + 8);
+        nextVal = exponentialSliderToValue(nextSlider, maxElev, 7.8, 'seaLevel');
+        if (nextVal <= seaLevelMeters) {
+          nextVal = Math.round(seaLevelMeters + 1);
+        }
+      }
+
+      if (nextVal >= maxElev) {
+        onSeaLevelChange(maxElev);
+        onIceMeltChange(100);
+        setIsPlaying(false);
+        return;
+      }
+
       onSeaLevelChange(nextVal);
       onIceMeltChange(Math.min(100, Math.round((nextVal / 66) * 100)));
     }, 100);
@@ -131,33 +156,37 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
     }
 
     let targetSeaLevel = 0;
-    if (displaced <= 14200000) {
-      // 0 to 1m SLR (displaces up to 14.2M people)
-      const fraction = displaced / 14200000;
-      targetSeaLevel = Number(Math.pow(fraction, 1 / 2.8).toFixed(2));
-    } else if (displaced <= 29000000) {
-      // 1 to 2m SLR (14.2M to 29.0M displaced)
-      const t = (displaced - 14200000) / (29000000 - 14200000);
+    if (displaced <= 16500000) {
+      // 0 to 1m SLR (up to 16.5M displaced from intertidal chars, polders & coastal delta fringe)
+      const fraction = displaced / 16500000;
+      targetSeaLevel = Number(Math.pow(fraction, 1 / 1.6).toFixed(2));
+    } else if (displaced <= 31000000) {
+      // 1 to 2m SLR (16.5M to 31.0M displaced)
+      const t = (displaced - 16500000) / (31000000 - 16500000);
       targetSeaLevel = Number((1.0 + t * 1.0).toFixed(2));
-    } else if (displaced <= 54000000) {
-      // 2 to 4m SLR (29.0M to 54.0M displaced, reaches Barishal & Patuakhali at 4m)
-      const t = (displaced - 29000000) / (54000000 - 29000000);
+    } else if (displaced <= 52000000) {
+      // 2 to 4m SLR (31.0M to 52.0M displaced, reaches Barishal & Patuakhali at 4m)
+      const t = (displaced - 31000000) / (52000000 - 31000000);
       targetSeaLevel = Number((2.0 + t * 2.0).toFixed(2));
-    } else if (displaced <= 98000000) {
-      // 4 to 8m SLR (54.0M to 98.0M displaced, reaches Dhaka at 8m)
-      const t = (displaced - 54000000) / (98000000 - 54000000);
+    } else if (displaced <= 92000000) {
+      // 4 to 8m SLR (52.0M to 92.0M displaced, reaches Dhaka at 8m)
+      const t = (displaced - 52000000) / (92000000 - 52000000);
       targetSeaLevel = Number((4.0 + t * 4.0).toFixed(2));
-    } else if (displaced <= 115000000) {
-      // 8 to 12m SLR (98M to 115M displaced)
-      const t = (displaced - 98000000) / (115000000 - 98000000);
-      targetSeaLevel = Number((8.0 + t * 4.0).toFixed(1));
-    } else if (displaced <= 165000000) {
-      // 12 to 75m SLR (115M to 165M displaced)
-      const t = (displaced - 115000000) / (165000000 - 115000000);
-      targetSeaLevel = Math.round(12.0 + t * 63.0);
+    } else if (displaced <= 136000000) {
+      // 8 to 16m SLR (92M to 136M displaced, reaches Kushtia at 16m)
+      const t = (displaced - 92000000) / (136000000 - 92000000);
+      targetSeaLevel = Number((8.0 + t * 8.0).toFixed(1));
+    } else if (displaced <= 158000000) {
+      // 16 to 30m SLR (136M to 158M displaced, reaches Sylhet city at 22m)
+      const t = (displaced - 136000000) / (158000000 - 136000000);
+      targetSeaLevel = Number((16.0 + t * 14.0).toFixed(1));
+    } else if (displaced <= 169500000) {
+      // 30 to 75m SLR (158M to 169.5M displaced)
+      const t = (displaced - 158000000) / (169500000 - 158000000);
+      targetSeaLevel = Math.round(30.0 + t * 45.0);
     } else {
-      // 75m to 1052m SLR (165M to 173M displaced)
-      const t = (displaced - 165000000) / (country.population - 165000000);
+      // 75m to 1052m SLR (169.5M to 173M displaced)
+      const t = (displaced - 169500000) / (country.population - 169500000);
       targetSeaLevel = Math.round(75.0 + t * (maxElev - 75.0));
     }
 
@@ -253,10 +282,10 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
             <button
               onClick={onGoHome}
               className="btn-cartoon-white px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-xs"
-              title="Return to Earth View"
+              title="Return to Main Menu"
             >
               <Globe className="w-3.5 h-3.5 text-sky-600" />
-              <span className="hidden sm:inline">Earth View</span>
+              <span className="hidden sm:inline">Main Menu</span>
             </button>
           )}
 
@@ -342,7 +371,15 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
             </h2>
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={() => {
+                  if (!isPlaying && seaLevelMeters >= maxElev) {
+                    onSeaLevelChange(0);
+                    onIceMeltChange(0);
+                    setIsPlaying(true);
+                  } else {
+                    setIsPlaying(!isPlaying);
+                  }
+                }}
                 className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all ${
                   isPlaying
                     ? 'btn-cartoon-amber text-slate-900'
@@ -507,7 +544,7 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
                   placeholder="0"
                 />
                 <span className="text-xs font-bold text-amber-700 select-none">
-                  {displacedText.toLowerCase().endsWith('m') || displacedText.toLowerCase().endsWith('k') ? '' : 'M'}
+                  {displacedPopulation === 0 || displacedText === '0' || displacedText.toLowerCase().endsWith('m') || displacedText.toLowerCase().endsWith('k') ? '' : 'M'}
                 </span>
               </div>
             </div>
@@ -517,7 +554,7 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
               type="range"
               min="0"
               max={country.population}
-              step="500000"
+              step="25000"
               value={displacedPopulation}
               onChange={(e) => {
                 const pop = parseFloat(e.target.value);
@@ -536,7 +573,11 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
             </div>
             <div className="text-[9px] text-amber-700 font-medium flex items-center justify-between mt-0.5">
               <span>
-                {displacedPopulation === 0 ? '0 displaced' : `${(displacedPopulation / 1000000).toFixed(1)}M (${Math.round((displacedPopulation / country.population) * 100)}% of Bangladesh)`}
+                {displacedPopulation === 0
+                  ? '0 displaced'
+                  : displacedPopulation >= 1000000
+                  ? `${(displacedPopulation / 1000000).toFixed(1)}M (${((displacedPopulation / country.population) * 100).toFixed(1)}% of Bangladesh)`
+                  : `${(displacedPopulation / 1000).toFixed(0)}k (${((displacedPopulation / country.population) * 100).toFixed(2)}% of Bangladesh)`}
               </span>
               <span className="italic text-slate-400">Click box to type</span>
             </div>
@@ -580,6 +621,46 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
               className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-[10px] font-bold"
             >
               +66m (All Ice)
+            </button>
+            <button
+              onClick={() => {
+                onSeaLevelChange(150);
+                onIceMeltChange(100);
+              }}
+              title="Yellow Mountains Sinking (100m–300m): Foothills & midland ridges sink"
+              className="px-2 py-1 rounded-lg bg-yellow-100 hover:bg-yellow-200 text-yellow-950 text-[10px] font-bold border border-yellow-300"
+            >
+              🟡 150m (Yellow Sinking)
+            </button>
+            <button
+              onClick={() => {
+                onSeaLevelChange(300);
+                onIceMeltChange(100);
+              }}
+              title="Yellow Mountains Submerged: All 100m–300m yellow mountains submerged; red mountains stay above water"
+              className="px-2 py-1 rounded-lg bg-yellow-200 hover:bg-yellow-300 text-yellow-950 text-[10px] font-bold border border-yellow-400"
+            >
+              🟡 300m (Yellow Sunk)
+            </button>
+            <button
+              onClick={() => {
+                onSeaLevelChange(600);
+                onIceMeltChange(100);
+              }}
+              title="Red Mountains Sinking (400m–1000m): High strike ridges drowning; highest peaks still above water"
+              className="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 text-[10px] font-bold border border-rose-300"
+            >
+              🔴 600m (Red Sinking)
+            </button>
+            <button
+              onClick={() => {
+                onSeaLevelChange(1000);
+                onIceMeltChange(100);
+              }}
+              title="Red Mountains Submerged (1000m): Almost entire country sunk; only Saka Haphong peak summit stands"
+              className="px-2 py-1 rounded-lg bg-rose-200 hover:bg-rose-300 text-rose-950 text-[10px] font-bold border border-rose-400"
+            >
+              🔴 1000m (Red Sunk)
             </button>
             <button
               onClick={() => {

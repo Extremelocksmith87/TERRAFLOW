@@ -8,8 +8,9 @@ export interface BangladeshCity {
   elevationMeters: number;
   population: number;
   isDivisionCapital?: boolean;
+  isMunicipality?: boolean;
   floodRiskLevel: 'extreme' | 'high' | 'moderate' | 'low';
-  category: 'megacity' | 'port' | 'industrial' | 'district' | 'hill_tract' | 'coastal';
+  category: 'megacity' | 'port' | 'industrial' | 'district' | 'hill_tract' | 'coastal' | 'municipality';
 }
 
 export const BANGLADESH_CITIES: BangladeshCity[] = [
@@ -306,6 +307,84 @@ export const BANGLADESH_CITIES: BangladeshCity[] = [
     floodRiskLevel: 'low',
     category: 'hill_tract'
   },
+  {
+    id: 'sandwip',
+    name: 'Sandwip Island',
+    bnName: 'সন্দ্বীপ',
+    division: 'Chattogram',
+    xPercent: 66.5,
+    yPercent: 68.0,
+    elevationMeters: 2,
+    population: 350000,
+    isMunicipality: true,
+    floodRiskLevel: 'extreme',
+    category: 'municipality'
+  },
+  {
+    id: 'sitakunda',
+    name: 'Sitakunda Coast',
+    bnName: 'সীতাকুণ্ড',
+    division: 'Chattogram',
+    xPercent: 71.0,
+    yPercent: 67.0,
+    elevationMeters: 4,
+    population: 380000,
+    isMunicipality: true,
+    floodRiskLevel: 'high',
+    category: 'municipality'
+  },
+  {
+    id: 'kutubdia',
+    name: 'Kutubdia Island',
+    bnName: 'কুতুবদিয়া',
+    division: 'Chattogram',
+    xPercent: 75.0,
+    yPercent: 81.0,
+    elevationMeters: 2,
+    population: 150000,
+    isMunicipality: true,
+    floodRiskLevel: 'extreme',
+    category: 'municipality'
+  },
+  {
+    id: 'teknaf',
+    name: 'Teknaf Peninsula',
+    bnName: 'টেকনাফ',
+    division: 'Chattogram',
+    xPercent: 84.0,
+    yPercent: 92.0,
+    elevationMeters: 3,
+    population: 260000,
+    isMunicipality: true,
+    floodRiskLevel: 'extreme',
+    category: 'municipality'
+  },
+  {
+    id: 'sajek',
+    name: 'Sajek Valley',
+    bnName: 'সাজেক ভ্যালি',
+    division: 'Chattogram',
+    xPercent: 79.5,
+    yPercent: 52.0,
+    elevationMeters: 540,
+    population: 35000,
+    isMunicipality: true,
+    floodRiskLevel: 'low',
+    category: 'hill_tract'
+  },
+  {
+    id: 'keokradong',
+    name: 'Keokradong Peak',
+    bnName: 'কেওক্রাডং',
+    division: 'Chattogram',
+    xPercent: 86.0,
+    yPercent: 81.0,
+    elevationMeters: 986,
+    population: 12000,
+    isMunicipality: true,
+    floodRiskLevel: 'low',
+    category: 'hill_tract'
+  },
 
   // --- SYLHET DIVISION ---
   {
@@ -356,6 +435,32 @@ export const BANGLADESH_CITIES: BangladeshCity[] = [
     population: 280000,
     floodRiskLevel: 'extreme',
     category: 'district'
+  },
+  {
+    id: 'sreemangal',
+    name: 'Sreemangal Tea Hills',
+    bnName: 'শ্রীমঙ্গল',
+    division: 'Sylhet',
+    xPercent: 68.0,
+    yPercent: 41.5,
+    elevationMeters: 35,
+    population: 240000,
+    isMunicipality: true,
+    floodRiskLevel: 'moderate',
+    category: 'municipality'
+  },
+  {
+    id: 'jaintiapur',
+    name: 'Jaintiapur Border Foothills',
+    bnName: 'জৈন্তাপুর',
+    division: 'Sylhet',
+    xPercent: 74.0,
+    yPercent: 31.0,
+    elevationMeters: 45,
+    population: 170000,
+    isMunicipality: true,
+    floodRiskLevel: 'moderate',
+    category: 'municipality'
   },
 
   // --- KHULNA DIVISION ---
@@ -554,6 +659,45 @@ export const BANGLADESH_CITIES: BangladeshCity[] = [
     population: 180000,
     floodRiskLevel: 'extreme',
     category: 'coastal'
+  },
+  {
+    id: 'kuakata',
+    name: 'Kuakata Beach',
+    bnName: 'কুয়াকাটা',
+    division: 'Barishal',
+    xPercent: 49.5,
+    yPercent: 83.5,
+    elevationMeters: 1.8,
+    population: 120000,
+    isMunicipality: true,
+    floodRiskLevel: 'extreme',
+    category: 'municipality'
+  },
+  {
+    id: 'dublar_char',
+    name: 'Dublar Char',
+    bnName: 'দুবলার চর',
+    division: 'Barishal',
+    xPercent: 42.0,
+    yPercent: 84.0,
+    elevationMeters: 1.0,
+    population: 50000,
+    isMunicipality: true,
+    floodRiskLevel: 'extreme',
+    category: 'municipality'
+  },
+  {
+    id: 'mongla',
+    name: 'Mongla Port',
+    bnName: 'মোংলা',
+    division: 'Khulna',
+    xPercent: 37.0,
+    yPercent: 74.5,
+    elevationMeters: 2.5,
+    population: 180000,
+    isMunicipality: true,
+    floodRiskLevel: 'extreme',
+    category: 'municipality'
   },
 
   // --- RAJSHAHI DIVISION ---

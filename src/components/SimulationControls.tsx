@@ -89,25 +89,44 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     onIceMeltChange(icePct);
   };
 
-  // Convert displaced population to sea level
+  // Convert displaced population to sea level using calibrated realistic demographic numbers
   const handleDisplacedSlider = (displaced: number) => {
     onDisplacedPopulationChange(displaced);
-    const fraction = displaced / country.population;
-    const avgElev = country.averageElevationMeters || 100;
-    const maxElev = country.highestPoint.elevationMeters || 1000;
-
-    let targetSeaLevel = 1;
-    if (fraction <= 0.01) {
-      targetSeaLevel = 1;
-    } else if (fraction <= 0.3) {
-      targetSeaLevel = Math.max(1, Math.round((fraction / 0.3) * 15));
-    } else if (fraction <= 0.7) {
-      targetSeaLevel = Math.round(15 + ((fraction - 0.3) / 0.4) * (avgElev - 15));
-    } else {
-      targetSeaLevel = Math.round(avgElev + ((fraction - 0.7) / 0.3) * (maxElev - avgElev));
+    if (displaced <= 0) {
+      onSeaLevelChange(0);
+      onIceMeltChange(0);
+      return;
     }
 
-    targetSeaLevel = Math.max(1, Math.min(3000, targetSeaLevel));
+    const maxElev = country.highestPoint?.elevationMeters || 1052;
+    let targetSeaLevel = 0;
+    if (displaced <= 1800000) {
+      const fraction = displaced / 1800000;
+      targetSeaLevel = Number(Math.sqrt(fraction).toFixed(2));
+    } else if (displaced <= 6500000) {
+      const t = (displaced - 1800000) / (6500000 - 1800000);
+      targetSeaLevel = Number((1.0 + t * 1.0).toFixed(2));
+    } else if (displaced <= 21000000) {
+      const t = (displaced - 6500000) / (21000000 - 6500000);
+      targetSeaLevel = Number((2.0 + t * 2.0).toFixed(2));
+    } else if (displaced <= 68000000) {
+      const t = (displaced - 21000000) / (68000000 - 21000000);
+      targetSeaLevel = Number((4.0 + t * 4.0).toFixed(2));
+    } else if (displaced <= 122000000) {
+      const t = (displaced - 68000000) / (122000000 - 68000000);
+      targetSeaLevel = Number((8.0 + t * 8.0).toFixed(1));
+    } else if (displaced <= 152000000) {
+      const t = (displaced - 122000000) / (152000000 - 122000000);
+      targetSeaLevel = Number((16.0 + t * 14.0).toFixed(1));
+    } else if (displaced <= 168500000) {
+      const t = (displaced - 152000000) / (168500000 - 152000000);
+      targetSeaLevel = Math.round(30.0 + t * 45.0);
+    } else {
+      const t = (displaced - 168500000) / (country.population - 168500000);
+      targetSeaLevel = Math.round(75.0 + t * (maxElev - 75.0));
+    }
+
+    targetSeaLevel = Math.max(0, Math.min(maxElev, targetSeaLevel));
     onSeaLevelChange(targetSeaLevel);
     onIceMeltChange(Math.min(100, Math.round((targetSeaLevel / 66) * 100)));
   };

@@ -131,7 +131,7 @@ export const PopulationPanel: React.FC<PopulationPanelProps> = ({
                     ) : (
                       <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg">
                         <ShieldCheck className="w-3 h-3" />
-                        Dry (+{heightMargin}m)
+                        Dry (+{heightMargin % 1 === 0 ? heightMargin : heightMargin.toFixed(1)}m)
                       </span>
                     )}
                   </div>

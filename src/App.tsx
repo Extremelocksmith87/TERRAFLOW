@@ -6,6 +6,11 @@
 import React, { useState, useMemo } from 'react';
 import { CountryFloodData } from './types/flood';
 import { COUNTRIES_DATA } from './data/countriesData';
+import { BANGLADESH_CITIES } from './data/bangladeshCitiesData';
+import {
+  calculateDisplacedAndFloodedSectors,
+  BANGLADESH_DISTRICTS_DATA
+} from './data/bangladeshDistrictsSubdivisions';
 import { EarthHero } from './components/EarthHero';
 import { DownloadingScreen } from './components/DownloadingScreen';
 import { SingleScreenDashboard } from './components/SingleScreenDashboard';
@@ -72,57 +77,23 @@ export default function App() {
       };
     }
 
-    // Submerged percentage & displaced population modeling with calibrated hypsographic real numbers:
-    let pct = 0;
-    let totalDisplaced = 0;
+    // Grounded in authentic 64 districts & 512 sub-district (1/8th of a district) sectors:
+    // Every 1/8th sector that sits at <= seaLevelMeters floods and contributes its exact population.
+    const metrics = calculateDisplacedAndFloodedSectors(seaLevelMeters);
 
-    if (seaLevelMeters <= 1.0) {
-      // 0 to 1m: Inundates outer intertidal mudflats and low mangrove margins
-      // At 0.1m (10cm): ~0.07% land (104 km²), ~22,500 displaced (outermost char/mudflat dwellers, not hundreds of thousands!)
-      // At 0.5m (50cm): ~2.44% land (3,597 km²), ~2.0M displaced
-      // At 1.0m (100cm): 11.20% land (16,528 km²), 14.2M displaced (official IPCC AR6 & World Bank benchmark)
-      pct = Number((11.2 * Math.pow(seaLevelMeters / 1.0, 2.2)).toFixed(2));
-      totalDisplaced = Math.round(14200000 * Math.pow(seaLevelMeters / 1.0, 2.8));
-    } else if (seaLevelMeters <= 2.0) {
-      // 1 to 2m: Lower delta estuarine margins (Barishal & Patuakhali at 4m remain completely safe!)
-      const t = (seaLevelMeters - 1.0) / 1.0;
-      pct = Number((11.2 + t * (21.0 - 11.2)).toFixed(2));
-      totalDisplaced = Math.round(14200000 + t * (29000000 - 14200000));
-    } else if (seaLevelMeters <= 4.0) {
-      // 2 to 4m: Reaches coastal polders (Survey of Bangladesh benchmark: Barishal & Patuakhali submerge at 4m)
-      const t = (seaLevelMeters - 2.0) / 2.0;
-      pct = Number((21.0 + t * (33.5 - 21.0)).toFixed(2));
-      totalDisplaced = Math.round(29000000 + t * (54000000 - 29000000));
-    } else if (seaLevelMeters <= 8.0) {
-      // 4 to 8m: Central delta floodplains (Dhaka Megacity at 8m elevation)
-      const t = (seaLevelMeters - 4.0) / 4.0;
-      pct = Number((33.5 + t * (52.0 - 33.5)).toFixed(2));
-      totalDisplaced = Math.round(54000000 + t * (98000000 - 54000000));
-    } else if (seaLevelMeters <= avgElev) {
-      // 8 to 12m: All active river confluence floodplains
-      const t = (seaLevelMeters - 8.0) / (avgElev - 8.0);
-      pct = Number((52.0 + t * (62.0 - 52.0)).toFixed(2));
-      totalDisplaced = Math.round(98000000 + t * (115000000 - 98000000));
-    } else if (seaLevelMeters <= 75.0) {
-      // 12 to 75m: Pleistocene terraces (Barind & Madhupur Tracts)
-      const t = (seaLevelMeters - avgElev) / (75.0 - avgElev);
-      pct = Number((62.0 + t * (88.5 - 62.0)).toFixed(2));
-      totalDisplaced = Math.round(115000000 + t * (165000000 - 115000000));
-    } else {
-      // 75m to 1,052m: Foothills and high peaks of Chittagong Hill Tracts
-      const t = (seaLevelMeters - 75.0) / (maxElev - 75.0);
-      pct = Number((88.5 + t * (100.0 - 88.5)).toFixed(2));
-      totalDisplaced = Math.round(165000000 + t * (selectedCountry.population - 165000000));
-    }
+    const pct = metrics.floodedPercent;
+    const totalDisplaced = metrics.totalDisplaced;
+    const area = metrics.submergedAreaKm2;
 
-    pct = Math.min(100, Math.max(0, pct));
-    const area = Math.round((pct / 100) * selectedCountry.totalAreaKm2);
-    totalDisplaced = Math.min(selectedCountry.population, Math.max(0, totalDisplaced));
-
-    // Identify submerged cities based on authentic elevations
-    const submerged = selectedCountry.cities
-      .filter((city) => city.elevationMeters <= seaLevelMeters)
-      .map((city) => city.name);
+    // Submerged districts & cities with 1/8th sector precision
+    const submerged = Array.from(metrics.districtStatuses.entries())
+      .filter(([, stat]) => stat.submergedSectorsCount > 0)
+      .map(([id, stat]) => {
+        const district = BANGLADESH_DISTRICTS_DATA.find((d) => d.id === id);
+        if (!district) return id;
+        if (stat.isFullySubmerged) return `${district.name} (8/8 Submerged)`;
+        return `${district.name} (${stat.submergedSectorsCount}/8 Submerged)`;
+      });
 
     return {
       floodedPercent: pct,
@@ -130,7 +101,7 @@ export default function App() {
       calculatedDisplaced: totalDisplaced,
       submergedCities: submerged
     };
-  }, [selectedCountry, seaLevelMeters, maxElev, avgElev]);
+  }, [selectedCountry, seaLevelMeters, maxElev]);
 
   // Keep displacedPopulation state synced: if seaLevelMeters is 0, displaced is strictly 0
   const effectiveDisplaced = seaLevelMeters === 0 ? 0 : (displacedPopulation > 0 ? displacedPopulation : calculatedDisplaced);
@@ -162,15 +133,9 @@ export default function App() {
         <SingleScreenDashboard
           country={selectedCountry}
           seaLevelMeters={seaLevelMeters}
-          onSeaLevelChange={(val) => {
-            setSeaLevelMeters(val);
-            setDisplacedPopulation(0); // auto compute
-          }}
+          onSeaLevelChange={(val) => setSeaLevelMeters(val)}
           iceMeltPercent={iceMeltPercent}
-          onIceMeltChange={(pct) => {
-            setIceMeltPercent(pct);
-            setDisplacedPopulation(0); // auto compute
-          }}
+          onIceMeltChange={(pct) => setIceMeltPercent(pct)}
           displacedPopulation={effectiveDisplaced}
           onDisplacedPopulationChange={(disp) => setDisplacedPopulation(disp)}
           showPopulationOverlay={showPopulationOverlay}
