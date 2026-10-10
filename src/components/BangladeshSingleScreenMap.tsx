@@ -3,11 +3,13 @@ import { BANGLADESH_CITIES, BangladeshCity } from '../data/bangladeshCitiesData'
 import {
   calculateDisplacedAndFloodedSectors,
   BANGLADESH_DISTRICTS_DATA,
-  DistrictSubdivision
+  DistrictSubdivision,
+  PRECISE_MOUNTAIN_SUBDIVISIONS
 } from '../data/bangladeshDistrictsSubdivisions';
 import { USGS_ELEVATION_ZONES, UsgsElevationZone } from '../data/usgsElevationZones';
 import {
   MOUNTAIN_ZONES,
+  GREEN_MOUNTAIN_ZONE,
   YELLOW_MOUNTAIN_ZONE,
   RED_MOUNTAIN_ZONE,
   MountainZone,
@@ -60,17 +62,23 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [selectedCity, setSelectedCity] = useState<BangladeshCity | null>(null);
   const [cityFilter, setCityFilter] = useState<'all' | 'capitals' | 'submerged' | 'coastal' | 'municipalities'>('all');
-  const [showUsgsElevation, setShowUsgsElevation] = useState(false);
+  const [showUsgsElevation, setShowUsgsElevation] = useState(true);
   const [showUsgsReportModal, setShowUsgsReportModal] = useState(false);
   const [showSunkenCities, setShowSunkenCities] = useState(false);
-  // Mountain Outlines: Specific outlines for Yellow (100–300m) and Red (400–1000m) mountains
+  // Mountain Red, Yellow, and Green outlines active to show mountain regions clearly
   const [showMountainOutlines, setShowMountainOutlines] = useState(true);
   const [selectedMountainPeak, setSelectedMountainPeak] = useState<MountainPeak | null>(null);
-  const [hoveredMountainZone, setHoveredMountainZone] = useState<'yellow' | 'red' | null>(null);
+  const [selectedMountainSubdivision, setSelectedMountainSubdivision] = useState<DistrictSubdivision | null>(null);
+  const [hoveredMountainZone, setHoveredMountainZone] = useState<'green' | 'yellow' | 'red' | null>(null);
 
-  // Dynamic mountain zone status based on sea level
+  // Dynamic mountain zone status based on sea level:
+  // Green mountains sink at 40m - 95m
   // Yellow mountains sink at 100m - 300m
-  // Red mountains sink between 400m - 1000m
+  // Red mountains sink between 400m - 1052m
+  const greenMountainStatus = useMemo(
+    () => getMountainZoneStatus(GREEN_MOUNTAIN_ZONE, seaLevelMeters),
+    [seaLevelMeters]
+  );
   const yellowMountainStatus = useMemo(
     () => getMountainZoneStatus(YELLOW_MOUNTAIN_ZONE, seaLevelMeters),
     [seaLevelMeters]
@@ -95,6 +103,8 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
   const currentlySubmergedCities = BANGLADESH_CITIES.filter(
     (c) => c.elevationMeters <= seaLevelMeters
   );
+  // Strictly only show flooding when cities are actually flooded
+  const hasFloodedCities = currentlySubmergedCities.length > 0;
 
   // 1/8th district subdivision flood metrics: authentic topographical flooding across all 64 districts
   const subSectorMetrics = useMemo(() => {
@@ -113,14 +123,14 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
     return subSectorMetrics.districtStatuses.get(selectedDistrictInfo.id) || null;
   }, [selectedDistrictInfo, subSectorMetrics]);
 
-  // Natural organic estuary wavefront (NO straight lines! Curves naturally into the Meghna & Ganges delta)
+  // Natural organic estuary wavefront rising continuously from below (Bay of Bengal / South)
   // Grounded in Survey of Bangladesh (SoB) / IWM / CEGIS benchmark elevations:
-  // - 0 to 4m: coastal waterline reaches Barishal and Patuakhali at 4m
-  // - 8m: reaches Dhaka Megacity
-  // - 16m: reaches Kushtia levee
+  // - 0 to 4m: coastal waterline rises from Bay of Bengal (y=1040-1200) reaching Barishal and Patuakhali at 4m
+  // - 8m: reaches Dhaka Megacity (y=580)
+  // - 16m: reaches Kushtia levee (y=578)
   // - 20m to 25m: reaches Sylhet city (22m) and Rajshahi plains (23m)
-  // - 30m to 75m: covers terraces (Barind & Madhupur)
-  // - Above 75m: all flat plains are flooded; only the RED regions (Sylhet hills 75-300m & CHT ridges 75-1052m) flood after
+  // - 30m to 75m: covers terraces (Barind & Madhupur) up to northern border (Panchagarh)
+  // - Above 75m: all flat plains are flooded from below; only the eastern mountain ridges remain above water
   const coastalWavefront = useMemo(() => {
     if (isFullySubmerged || seaLevelMeters >= 1052) {
       return {
@@ -132,79 +142,59 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
       return { mainPath: '', featherPath: '' };
     }
 
-    let yw = 1000, ym = 960, ye = 1020;
+    let yw = 1040, ym = 1000, ye = 1060;
     if (seaLevelMeters <= 1.0) {
       const t = seaLevelMeters / 1.0;
-      yw = 1000 - t * 45;
-      ym = 960 - t * 50;
-      ye = 1020 - t * 55;
+      yw = 1040 - t * 70;
+      ym = 1000 - t * 75;
+      ye = 1060 - t * 80;
     } else if (seaLevelMeters <= 4.0) {
       // 1m to 4m: reaches Barishal (y=810), Patuakhali (y=891), Sitakunda (y=770), Sandwip (y=780)
       const t = (seaLevelMeters - 1.0) / 3.0;
-      yw = 955 - t * 100;
-      ym = 910 - t * 140;
-      ye = 965 - t * 165;
+      yw = 970 - t * 115;
+      ym = 925 - t * 145;
+      ye = 980 - t * 155;
     } else if (seaLevelMeters <= 8.0) {
       // 4m to 8m: reaches Dhaka Megacity (y=580) at 8.0m
       const t = (seaLevelMeters - 4.0) / 4.0;
       yw = 855 - t * 140;
-      ym = 770 - t * 190;
-      ye = 800 - t * 150;
+      ym = 780 - t * 200;
+      ye = 825 - t * 165;
     } else if (seaLevelMeters <= 16.0) {
       // 8m to 16m: reaches Kushtia (y=578) at 16.0m
       const t = (seaLevelMeters - 8.0) / 8.0;
-      yw = 715 - t * 145;
-      ym = 580 - t * 140;
-      ye = 650 - t * 150;
+      yw = 715 - t * 140;
+      ym = 580 - t * 120;
+      ye = 660 - t * 140;
     } else if (seaLevelMeters <= 25.0) {
       // 16m to 25m: reaches Sylhet city (y=416, 22m) and Rajshahi plains (y=530, 23m)
       const t = (seaLevelMeters - 16.0) / 9.0;
-      yw = 570 - t * 160;
-      ym = 440 - t * 140;
-      ye = 500 - t * 180;
+      yw = 575 - t * 155;
+      ym = 460 - t * 130;
+      ye = 520 - t * 160;
     } else if (seaLevelMeters <= 75.0) {
-      // 25m to 75m: reaches northern plains and terraces
+      // 25m to 75m: reaches northern plains and terraces up to northern border
       const t = (seaLevelMeters - 25.0) / 50.0;
-      yw = 410 - t * 410;
-      ym = 300 - t * 300;
-      ye = 320 - t * 320;
+      yw = 420 - t * 420;
+      ym = 330 - t * 330;
+      ye = 360 - t * 360;
     } else {
-      // > 75m: base wavefront covers entire country; only RED high mountains stand above water
+      // > 75m: base wavefront covers entire country; only high mountain strike ridges stand above water
       yw = 0;
       ym = 0;
       ye = 0;
     }
 
-    // Dynamically pull the bottom coastal wavefront up to seamlessly join with the flooded districts
-    if (subSectorMetrics.floodedSubdivisions.length > 0) {
-      const westSubs = subSectorMetrics.floodedSubdivisions.filter((s) => s.x <= 400);
-      const midSubs = subSectorMetrics.floodedSubdivisions.filter((s) => s.x > 400 && s.x <= 620);
-      const eastSubs = subSectorMetrics.floodedSubdivisions.filter((s) => s.x > 620);
-
-      if (westSubs.length > 0) {
-        const minY = Math.min(...westSubs.map((s) => s.y));
-        yw = Math.min(yw, minY + 18);
-      }
-      if (midSubs.length > 0) {
-        const minY = Math.min(...midSubs.map((s) => s.y));
-        ym = Math.min(ym, minY + 18);
-      }
-      if (eastSubs.length > 0) {
-        const minY = Math.min(...eastSubs.map((s) => s.y));
-        ye = Math.min(ye, minY + 18);
-      }
-    }
-
     const mainPath = yw <= 0 && ym <= 0 && ye <= 0
       ? 'M 0 0 L 896 0 L 896 1200 L 0 1200 Z'
-      : `M 0 1200 L 0 ${yw.toFixed(1)} C 220 ${(yw - 30).toFixed(1)}, 370 ${ym.toFixed(1)}, 470 ${ym.toFixed(1)} C 560 ${ym.toFixed(1)}, 720 ${(ye - 30).toFixed(1)}, 896 ${ye.toFixed(1)} L 896 1200 Z`;
+      : `M 0 1200 L 0 ${yw.toFixed(1)} C 220 ${(yw - 25).toFixed(1)}, 370 ${ym.toFixed(1)}, 470 ${ym.toFixed(1)} C 560 ${ym.toFixed(1)}, 700 ${(ye - 25).toFixed(1)}, 896 ${ye.toFixed(1)} L 896 1200 Z`;
 
     const featherPath = yw <= 0 && ym <= 0 && ye <= 0
       ? ''
-      : `M 0 ${(yw - 4).toFixed(1)} C 220 ${(yw - 34).toFixed(1)}, 370 ${(ym - 4).toFixed(1)}, 470 ${(ym - 4).toFixed(1)} C 560 ${(ym - 4).toFixed(1)}, 720 ${(ye - 34).toFixed(1)}, 896 ${(ye - 4).toFixed(1)}`;
+      : `M 0 ${(yw - 4).toFixed(1)} C 220 ${(yw - 29).toFixed(1)}, 370 ${(ym - 4).toFixed(1)}, 470 ${(ym - 4).toFixed(1)} C 560 ${(ym - 4).toFixed(1)}, 700 ${(ye - 29).toFixed(1)}, 896 ${(ye - 4).toFixed(1)}`;
 
     return { mainPath, featherPath };
-  }, [seaLevelMeters, isFullySubmerged, subSectorMetrics]);
+  }, [seaLevelMeters, isFullySubmerged]);
 
   // Mouse pan drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -318,6 +308,20 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
               <span>See Population</span>
             </>
           )}
+        </button>
+
+        {/* MOUNTAINS TOGGLE BUTTON (RED, YELLOW, GREEN & 32 PRECISION SUBDIVISIONS) */}
+        <button
+          onClick={() => setShowMountainOutlines(!showMountainOutlines)}
+          title="Toggle Mountain Red, Yellow, and Green Regions and 32 Precision Subdivisions"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold transition-all shadow-md ${
+            showMountainOutlines
+              ? 'bg-rose-700 hover:bg-rose-800 text-white ring-2 ring-rose-300'
+              : 'bg-white hover:bg-slate-50 text-slate-800 border border-slate-200'
+          }`}
+        >
+          <Mountain className="w-3.5 h-3.5 text-amber-300" />
+          <span>{showMountainOutlines ? 'Mountains (32 Subdivs)' : 'Show Mountains'}</span>
         </button>
 
         {/* USGS OFR 97-470H SCIENTIFIC ELEVATION LAYERS BUTTON */}
@@ -493,62 +497,31 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
             <div className="pt-1 mt-0.5 border-t border-slate-200 text-[9px] text-slate-500 leading-tight">
               SoB &amp; IWM Benchmarks (Barishal &amp; Patuakhali: 4m MSL)
             </div>
-
-            {/* SPECIFIC MOUNTAINS SINKING STATUS (Yellow: 100-300m, Red: 400-1000m) */}
-            <div className="pt-1.5 mt-1 border-t-2 border-dashed border-slate-200">
-              <div className="font-semibold text-slate-800 text-[10px] uppercase tracking-wider mb-1 flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <Mountain className="w-3 h-3 text-rose-600" />
-                  Mountain Outlines
-                </span>
-                <span className="font-mono text-[9px] text-slate-500">{seaLevelMeters.toFixed(1)}m</span>
-              </div>
-              {/* Yellow Mountains: 100m - 300m */}
-              <div className="flex items-center justify-between text-[10px] mb-1 bg-amber-50/70 p-1 rounded-lg border border-amber-200">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#facc15] border border-[#ca8a04] shrink-0 shadow-xs" />
-                  <span className="text-amber-950 font-bold">Yellow (100–300m)</span>
-                </div>
-                <span
-                  className={`text-[8.5px] font-bold px-1.5 py-0.2 rounded-full ${
-                    yellowMountainStatus.isDry
-                      ? 'text-emerald-800 bg-emerald-100'
-                      : yellowMountainStatus.isSinking
-                      ? 'text-amber-900 bg-amber-200 animate-pulse'
-                      : 'text-sky-900 bg-sky-200'
-                  }`}
-                >
-                  {yellowMountainStatus.isDry
-                    ? 'Safe'
-                    : yellowMountainStatus.isSinking
-                    ? `${yellowMountainStatus.submergedPercent}% Sunk`
-                    : 'Submerged'}
-                </span>
-              </div>
-              {/* Red High Mountains: 400m - 1000m */}
-              <div className="flex items-center justify-between text-[10px] bg-rose-50/70 p-1 rounded-lg border border-rose-200">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] border border-[#991b1b] shrink-0 shadow-xs" />
-                  <span className="text-rose-950 font-bold">Red (400–1000m)</span>
-                </div>
-                <span
-                  className={`text-[8.5px] font-bold px-1.5 py-0.2 rounded-full ${
-                    redMountainStatus.isDry
-                      ? 'text-emerald-800 bg-emerald-100'
-                      : redMountainStatus.isSinking
-                      ? 'text-rose-900 bg-rose-200 animate-pulse'
-                      : 'text-sky-900 bg-sky-200'
-                  }`}
-                >
-                  {redMountainStatus.isDry
-                    ? 'Safe'
-                    : redMountainStatus.isSinking
-                    ? `${redMountainStatus.submergedPercent}% Sunk`
-                    : 'Submerged'}
-                </span>
-              </div>
-            </div>
           </>
+        )}
+
+        {/* Mountain Elevation Zones (Red, Yellow, Green & 32 Subdivisions) */}
+        {showMountainOutlines && !showPopulationOverlay && (
+          <div className="pt-1.5 mt-1 border-t border-slate-200 flex flex-col gap-1">
+            <div className="font-semibold text-slate-800 text-[10px] uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Mountain className="w-3 h-3 text-emerald-600" />
+                Mountain Zones (32)
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] border border-[#dc2626] shrink-0" />
+              <span className="text-slate-800 font-bold">Red (400–1000m+)</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#eab308] border border-[#ca8a04] shrink-0" />
+              <span className="text-slate-700 font-medium">Yellow (100–300m)</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-[#16a34a] shrink-0" />
+              <span className="text-slate-700 font-medium">Green (40–95m)</span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -629,6 +602,9 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                 </radialGradient>
 
                 {/* Specific Mountain Outline Glow Filters */}
+                <filter id="greenMountainGlow" x="-25%" y="-25%" width="150%" height="150%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3.0" floodColor="#22c55e" floodOpacity="0.88" />
+                </filter>
                 <filter id="yellowMountainGlow" x="-25%" y="-25%" width="150%" height="150%">
                   <feDropShadow dx="0" dy="0" stdDeviation="3.0" floodColor="#facc15" floodOpacity="0.88" />
                 </filter>
@@ -649,74 +625,230 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                     <rect x="0" y="0" width="896" height="1200" fill="white" />
                   ) : seaLevelMeters > 0 ? (
                     <>
-                      {/* 1. Base open ocean in Bay of Bengal south of mainland coast (y >= 1070) */}
-                      <path
-                        d="M 0 1200 L 0 1070 C 220 1055, 450 1060, 650 1045 C 750 1055, 840 1065, 896 1080 L 896 1200 Z"
-                        fill="white"
-                        opacity={Math.min(1, seaLevelMeters / 1.0)}
-                      />
-
-                      {/* 2. Coastal shoreline strip along Chattogram & Cox's Bazar beaches (floods at actual 1m - 3m elevation) */}
-                      {seaLevelMeters >= 1.0 && (
+                      {/* 1. CONTINUOUS OCEAN FLOOD BODY COMING FROM BELOW (Bay of Bengal / South) */}
+                      {/* As sea level rises, water surges upward from y=1200 / y=1040 northward across Bangladesh */}
+                      {coastalWavefront.mainPath && (
                         <path
-                          d="M 570,780 C 600,770 635,790 655,830 C 675,870 705,950 730,1030 C 750,1090 755,1150 760,1200 L 710,1200 C 700,1130 685,1060 660,990 C 635,920 610,840 570,780 Z"
+                          d={coastalWavefront.mainPath}
                           fill="white"
-                          opacity={Math.min(1, (seaLevelMeters - 1.0) / 2.0)}
+                          opacity={Math.min(1, 0.8 + Math.min(1, seaLevelMeters / 2.0) * 0.2)}
                         />
                       )}
 
-                      {/* 3. ONLY Flooded 1/8th Sub-District Sectors (sub.elevationMeters <= seaLevelMeters) */}
-                      {subSectorMetrics.floodedSubdivisions.map((sub) => {
-                        const depth = Math.max(0, seaLevelMeters - sub.elevationMeters);
-                        const radius = sub.r + Math.min(22, Math.sqrt(depth) * 4.2);
-                        return (
-                          <circle
-                            key={`mask-sub-${sub.id}`}
-                            cx={sub.x}
-                            cy={sub.y}
-                            r={radius}
-                            fill="white"
-                          />
-                        );
-                      })}
+                      {/* 2. BORDERING LANDS FLOODING (Flooding authentic border terrain at exact elevations) */}
+                      {/* 2A. Southwest Border: Satkhira & West Sundarbans border with India (0.8m - 7.5m, floods >= 1.0m) */}
+                      {seaLevelMeters >= 1.0 && (
+                        <path
+                          d="M 155 970 L 155 760 C 195 750, 245 760, 275 780 C 305 800, 315 840, 310 890 C 300 940, 260 980, 200 980 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.7 + (seaLevelMeters / 4.0) * 0.3)}
+                        />
+                      )}
 
-                      {/* 4. ONLY Actually Submerged District Cities (city.elevationMeters <= seaLevelMeters) */}
-                      {currentlySubmergedCities.map((city) => {
-                        const coords = getCityCoordinates(city.xPercent, city.yPercent);
-                        const depth = Math.max(0, seaLevelMeters - city.elevationMeters);
-                        const r = Math.min(52, 16 + Math.sqrt(depth) * 5.2);
-                        return (
-                          <circle
-                            key={`mask-submerged-${city.id}`}
-                            cx={coords.x}
-                            cy={coords.y}
-                            r={r}
-                            fill="white"
-                          />
-                        );
-                      })}
+                      {/* 2B. Southeast Border: Cox's Bazar beaches, Teknaf peninsula & Naf River border with Myanmar (1m - 6m, floods >= 1.0m) */}
+                      {seaLevelMeters >= 1.0 && (
+                        <path
+                          d="M 650 820 C 680 810, 720 830, 745 880 C 765 930, 775 1010, 775 1100 C 770 1160, 765 1190, 755 1200 L 690 1200 C 680 1130, 670 1060, 650 990 C 630 920, 620 850, 650 820 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.7 + (seaLevelMeters / 3.0) * 0.3)}
+                        />
+                      )}
 
-                      {/* 5. Submerge Yellow Mountains ONLY when seaLevelMeters >= 100m (sinks 100m - 300m) */}
-                      {seaLevelMeters >= 100 &&
+                      {/* 2C. Northeast Border: Sunamganj & Netrokona haor border plains with Meghalaya (3m - 10m, floods >= 3.0m) */}
+                      {seaLevelMeters >= 3.0 && (
+                        <path
+                          d="M 450 370 C 510 335, 590 335, 650 350 C 670 370, 660 410, 630 430 C 570 440, 500 440, 450 410 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 3.0) / 7.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2D. East Border Plains: Brahmanbaria, Cumilla & Feni plains bordering Tripura (3.5m - 10m, floods >= 3.5m) */}
+                      {seaLevelMeters >= 3.5 && (
+                        <path
+                          d="M 540 640 C 580 620, 630 630, 660 670 C 670 710, 660 755, 630 770 C 590 775, 560 750, 540 710 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 3.5) / 6.5) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2E. West Border: Chuadanga, Meherpur, Kushtia & Jhenaidah plains bordering West Bengal (8m - 18m, floods >= 8.0m) */}
+                      {seaLevelMeters >= 8.0 && (
+                        <path
+                          d="M 155 680 C 165 590, 185 530, 235 520 C 285 520, 315 550, 315 615 C 315 665, 285 685, 235 690 C 195 690, 165 685, 155 680 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 8.0) / 10.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2F. Westernmost Border Bulge: Chapainawabganj & Rajshahi border with Malda/Murshidabad (12m - 25m, floods >= 12.0m) */}
+                      {seaLevelMeters >= 12.0 && (
+                        <path
+                          d="M 105 480 C 105 420, 140 380, 195 380 C 240 390, 270 430, 265 485 C 255 530, 220 550, 170 550 C 125 540, 105 515, 105 480 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 12.0) / 13.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2G. North Border: Kurigram & Lalmonirhat lower plains bordering Assam/Cooch Behar (14m - 30m, floods >= 14.0m) */}
+                      {seaLevelMeters >= 14.0 && (
+                        <path
+                          d="M 325 255 C 325 195, 360 155, 415 155 C 460 165, 470 210, 455 255 C 435 290, 380 300, 345 290 C 330 280, 325 265, 325 255 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 14.0) / 16.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2H. East Border: Sylhet & Moulvibazar eastern border plains with Assam/Tripura (14m - 28m, floods >= 14.0m) */}
+                      {seaLevelMeters >= 14.0 && (
+                        <path
+                          d="M 610 440 C 650 405, 700 405, 735 430 C 755 465, 745 515, 710 545 C 675 560, 630 550, 605 505 C 595 470, 600 450, 610 440 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 14.0) / 14.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2I. Northwest Border: Dinajpur, Nilphamari & Thakurgaon bordering West Bengal (25m - 55m, floods >= 25.0m) */}
+                      {seaLevelMeters >= 25.0 && (
+                        <path
+                          d="M 165 270 C 165 195, 200 160, 255 160 C 310 170, 340 215, 330 275 C 310 320, 255 330, 195 320 C 175 305, 165 290, 165 270 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 25.0) / 30.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2J. Northern Meghalaya Border Escarpment: Sherpur & Jamalpur bordering Garo Hills (25m - 60m, floods >= 25.0m) */}
+                      {seaLevelMeters >= 25.0 && (
+                        <path
+                          d="M 350 345 C 385 315, 445 315, 490 325 C 515 345, 505 385, 470 405 C 425 415, 375 405, 350 375 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 25.0) / 35.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 2K. Northernmost Border Tip: Panchagarh border with West Bengal/Sikkim (45m - 75m, floods >= 45.0m) */}
+                      {seaLevelMeters >= 45.0 && (
+                        <path
+                          d="M 135 165 C 135 90, 170 60, 225 60 C 265 70, 275 115, 260 165 C 235 195, 190 200, 155 190 C 140 180, 135 165, 135 165 Z"
+                          fill="white"
+                          opacity={Math.min(1, 0.5 + ((seaLevelMeters - 45.0) / 30.0) * 0.5)}
+                        />
+                      )}
+
+                      {/* 3. LIGHT GREEN TERRAIN (0m - 10m MSL): Extends across coastal delta, Sundarbans & lower active river plains */}
+                      {/* 3A. Zone 0-3m (Sundarbans, Coastal Delta & Estuarine Inlets) */}
+                      {seaLevelMeters >= 1.0 &&
+                        USGS_ELEVATION_ZONES.find((z) => z.id === '0-3')?.paths.map((p, idx) => (
+                          <path
+                            key={`mask-zone-0-3-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.7 + (seaLevelMeters / 3.0) * 0.3)}
+                          />
+                        ))}
+
+                      {/* 3B. Zone 3-10m (Lower Active Delta Plains & River Estuaries - covers all LIGHT GREEN areas everywhere) */}
+                      {seaLevelMeters >= 1.5 &&
+                        USGS_ELEVATION_ZONES.find((z) => z.id === '3-10')?.paths.map((p, idx) => (
+                          <path
+                            key={`mask-zone-3-10-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.45 + ((seaLevelMeters - 1.5) / 8.5) * 0.55)}
+                          />
+                        ))}
+
+                      {/* 4. DARK GREEN TERRAIN (10m - 75m MSL): Extends across central floodplains, Tista fan & inland terraces */}
+                      {/* 4A. Zone 10-30m (Central Delta Floodplains & Tista Alluvial Fan - covers all DARK GREEN plains everywhere) */}
+                      {seaLevelMeters >= 10.0 &&
+                        USGS_ELEVATION_ZONES.find((z) => z.id === '10-30')?.paths.map((p, idx) => (
+                          <path
+                            key={`mask-zone-10-30-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.5 + ((seaLevelMeters - 10.0) / 20.0) * 0.5)}
+                          />
+                        ))}
+
+                      {/* 4B. Zone 30-75m (Pleistocene Terraces - Barind & Madhupur Tracts) */}
+                      {seaLevelMeters >= 30.0 &&
+                        USGS_ELEVATION_ZONES.find((z) => z.id === '30-75')?.paths.map((p, idx) => (
+                          <path
+                            key={`mask-zone-30-75-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.5 + ((seaLevelMeters - 30.0) / 45.0) * 0.5)}
+                          />
+                        ))}
+
+                      {/* 4C. Green Mountain Uplands & Piedmont Terraces (40m - 95m) */}
+                      {seaLevelMeters >= 40.0 &&
+                        GREEN_MOUNTAIN_ZONE.paths.map((p, idx) => (
+                          <path
+                            key={`mask-green-mtn-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.5 + ((seaLevelMeters - 40.0) / 55.0) * 0.5)}
+                          />
+                        ))}
+
+                      {/* 5. YELLOW TERRAIN (75m - 300m MSL): Extends across foothills, tea gardens, uplands & midland ranges */}
+                      {/* 5A. Zone 75-300m (Sylhet Hills & Chittagong Low Foothills) */}
+                      {seaLevelMeters >= 75.0 &&
+                        USGS_ELEVATION_ZONES.find((z) => z.id === '75-300')?.paths.map((p, idx) => (
+                          <path
+                            key={`mask-zone-75-300-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.55 + ((seaLevelMeters - 75.0) / 225.0) * 0.45)}
+                          />
+                        ))}
+
+                      {/* 5B. Specific Yellow Mountain Zones across Sylhet, Top Dhaka, Rajshahi, Rangpur & Chattogram (100m - 300m) */}
+                      {seaLevelMeters >= 100.0 &&
                         YELLOW_MOUNTAIN_ZONE.paths.map((p, idx) => (
                           <path
                             key={`mask-yellow-mtn-${idx}`}
                             d={p}
                             fill="white"
-                            opacity={Math.min(1, (seaLevelMeters - 100) / 200)}
+                            opacity={Math.min(1, 0.6 + ((seaLevelMeters - 100.0) / 200.0) * 0.4)}
                           />
                         ))}
 
-                      {/* 6. Submerge Red High Mountains ONLY when seaLevelMeters >= 400m (sinks 400m - 1000m) */}
-                      {seaLevelMeters >= 400 &&
+                      {/* 6. RED TERRAIN (300m - 1,052m MSL): Extends across high strike ridges, scarps & highest summits */}
+                      {/* 6A. Zone > 300m (Chittagong High Strike Ridges) */}
+                      {seaLevelMeters >= 300.0 &&
+                        USGS_ELEVATION_ZONES.find((z) => z.id === '> 300')?.paths.map((p, idx) => (
+                          <path
+                            key={`mask-zone-gt300-${idx}`}
+                            d={p}
+                            fill="white"
+                            opacity={Math.min(1, 0.55 + ((seaLevelMeters - 300.0) / 752.0) * 0.45)}
+                          />
+                        ))}
+
+                      {/* 6B. Specific Red High Mountains (400m - 1,052m) */}
+                      {seaLevelMeters >= 400.0 &&
                         RED_MOUNTAIN_ZONE.paths.map((p, idx) => (
                           <path
                             key={`mask-red-mtn-${idx}`}
                             d={p}
                             fill="white"
-                            opacity={Math.min(1, (seaLevelMeters - 400) / 600)}
+                            opacity={Math.min(1, 0.6 + ((seaLevelMeters - 400.0) / 652.0) * 0.4)}
                           />
                         ))}
+
+                      {/* 7. ALL FLOODED DISTRICT SUBDIVISIONS (Ensures every district sector and border tract floods seamlessly) */}
+                      {subSectorMetrics.floodedSubdivisions.map((sub) => (
+                        <circle
+                          key={`mask-sub-${sub.id}`}
+                          cx={sub.x}
+                          cy={sub.y}
+                          r={Math.max(26, sub.r * 1.8)}
+                          fill="white"
+                          opacity={Math.min(1, 0.65 + Math.min(1, (seaLevelMeters - sub.elevationMeters) / 3.0) * 0.35)}
+                        />
+                      ))}
                     </>
                   ) : null}
                 </mask>
@@ -767,6 +899,18 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                         }
                       />
 
+                      {/* Dynamic tidal wavefront crest foam along the advancing flood from below */}
+                      {coastalWavefront.featherPath && (
+                        <path
+                          d={coastalWavefront.featherPath}
+                          fill="none"
+                          stroke="#38bdf8"
+                          strokeWidth={3}
+                          strokeOpacity={0.8}
+                          strokeDasharray="16 8"
+                        />
+                      )}
+
                       {/* USGS Scientific Elevation Contours Filled with Water as Sea Level Rises */}
                       {USGS_ELEVATION_ZONES.map((zone) => {
                         if (seaLevelMeters < zone.minMeters) return null;
@@ -792,15 +936,95 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                           </g>
                         );
                       })}
+
+                      {/* Submerged Green Mountain Deep Water Contours */}
+                      {seaLevelMeters >= 40 &&
+                        GREEN_MOUNTAIN_ZONE.paths.map((p, idx) => (
+                          <path
+                            key={`flood-water-green-mtn-${idx}`}
+                            d={p}
+                            fill="url(#oceanWater)"
+                            fillOpacity={Math.min(0.92, 0.45 + ((seaLevelMeters - 40) / 55) * 0.47)}
+                            stroke="#0c445f"
+                            strokeWidth={2.5}
+                            strokeLinejoin="round"
+                          />
+                        ))}
+
+                      {/* Submerged Yellow Mountain Deep Water Contours */}
+                      {seaLevelMeters >= 100 &&
+                        YELLOW_MOUNTAIN_ZONE.paths.map((p, idx) => (
+                          <path
+                            key={`flood-water-yellow-mtn-${idx}`}
+                            d={p}
+                            fill="url(#oceanWater)"
+                            fillOpacity={Math.min(0.95, 0.45 + ((seaLevelMeters - 100) / 200) * 0.5)}
+                            stroke="#0c445f"
+                            strokeWidth={3}
+                            strokeLinejoin="round"
+                          />
+                        ))}
+
+                      {/* Submerged Red Mountain Oceanic Deep Trench */}
+                      {seaLevelMeters >= 400 &&
+                        RED_MOUNTAIN_ZONE.paths.map((p, idx) => (
+                          <path
+                            key={`flood-water-red-mtn-${idx}`}
+                            d={p}
+                            fill="url(#oceanDeepSubmersion)"
+                            fillOpacity={Math.min(0.98, 0.5 + ((seaLevelMeters - 400) / 600) * 0.48)}
+                            stroke="#082b3d"
+                            strokeWidth={4}
+                            strokeLinejoin="round"
+                          />
+                        ))}
                     </g>
                   )}
                 </g>
               )}
 
-              {/* ---------------- 3. VERY SPECIFIC MOUNTAIN OUTLINES (YELLOW: 100-300m & RED: 400-1000m) ---------------- */}
+              {/* ---------------- 3. VERY SPECIFIC MOUNTAIN REGIONS (GREEN: 40-95m, YELLOW: 100-300m, RED: 400-1000m+) & 32 PRECISION SUBDIVISIONS ---------------- */}
               {showMountainOutlines && !showPopulationOverlay && (
                 <g className="specific-mountain-outlines-layer pointer-events-auto">
-                  {/* A. YELLOW MOUNTAIN ZONE (100m - 300m): Sinks at 100m–300m */}
+                  {/* A. GREEN LOW UPLANDS & PIEDMONT REGION (40m - 95m): Sinks at 40m–95m */}
+                  <g
+                    className="green-mountains-group cursor-pointer"
+                    onMouseEnter={() => setHoveredMountainZone('green')}
+                    onMouseLeave={() => setHoveredMountainZone(null)}
+                  >
+                    {GREEN_MOUNTAIN_ZONE.paths.map((p, i) => (
+                      <g key={`green-mtn-path-${i}`}>
+                        {/* 1. Underlying Green Mountain Region (Rich Tinted Fill + Crisp Boundary) */}
+                        <path
+                          d={p}
+                          fill={GREEN_MOUNTAIN_ZONE.fillColor}
+                          stroke="#16a34a"
+                          strokeWidth={hoveredMountainZone === 'green' ? 3.0 : 1.8}
+                          filter={hoveredMountainZone === 'green' ? 'url(#greenMountainGlow)' : undefined}
+                          strokeDasharray={greenMountainStatus.isSinking ? '5 2.5' : undefined}
+                          className="transition-all duration-300"
+                        />
+
+                        {/* 2. Submerged Flood Water Overlay: Floods progressively between 40m and 95m */}
+                        {seaLevelMeters >= 40 && (
+                          <path
+                            d={p}
+                            fill="url(#oceanWater)"
+                            fillOpacity={
+                              greenMountainStatus.isFullySubmerged
+                                ? 0.92
+                                : Math.min(0.90, 0.45 + (greenMountainStatus.submergedPercent / 100) * 0.45)
+                            }
+                            stroke="#0c445f"
+                            strokeWidth={greenMountainStatus.isFullySubmerged ? 3.5 : 1.8}
+                            strokeLinejoin="round"
+                          />
+                        )}
+                      </g>
+                    ))}
+                  </g>
+
+                  {/* B. YELLOW MOUNTAIN ZONE (100m - 300m): Sinks at 100m–300m */}
                   <g
                     className="yellow-mountains-group cursor-pointer"
                     onMouseEnter={() => setHoveredMountainZone('yellow')}
@@ -808,20 +1032,14 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                   >
                     {YELLOW_MOUNTAIN_ZONE.paths.map((p, i) => (
                       <g key={`yellow-mtn-path-${i}`}>
-                        {/* 1. Underlying Yellow Mountain Glow Outline & Hypsometric Tint */}
+                        {/* 1. Underlying Yellow Mountain Region (Rich Tinted Fill + Crisp Contour Line) */}
                         <path
                           d={p}
-                          fill={
-                            yellowMountainStatus.isDry
-                              ? 'rgba(250, 204, 21, 0.24)'
-                              : yellowMountainStatus.isSinking
-                              ? 'rgba(234, 179, 8, 0.35)'
-                              : 'rgba(12, 68, 95, 0.85)'
-                          }
-                          stroke="#facc15"
-                          strokeWidth={hoveredMountainZone === 'yellow' ? 4.0 : 2.6}
-                          strokeDasharray={yellowMountainStatus.isSinking ? '8 4' : undefined}
-                          filter="url(#yellowMountainGlow)"
+                          fill={YELLOW_MOUNTAIN_ZONE.fillColor}
+                          stroke="#eab308"
+                          strokeWidth={hoveredMountainZone === 'yellow' ? 3.2 : 2.0}
+                          filter={hoveredMountainZone === 'yellow' ? 'url(#yellowMountainGlow)' : undefined}
+                          strokeDasharray={yellowMountainStatus.isSinking ? '6 3' : undefined}
                           className="transition-all duration-300"
                         />
 
@@ -844,7 +1062,7 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                     ))}
                   </g>
 
-                  {/* B. RED HIGH MOUNTAIN ZONE (400m - 1000m+): Sinks between 400m–1000m */}
+                  {/* C. RED HIGH MOUNTAIN ZONE (400m - 1000m+): Sinks between 400m–1000m */}
                   <g
                     className="red-mountains-group cursor-pointer"
                     onMouseEnter={() => setHoveredMountainZone('red')}
@@ -852,20 +1070,14 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                   >
                     {RED_MOUNTAIN_ZONE.paths.map((p, i) => (
                       <g key={`red-mtn-path-${i}`}>
-                        {/* 1. Underlying Red High Mountain Glow Outline & Tint (Stands above water until 400m) */}
+                        {/* 1. Underlying Red High Mountain Region (Rich Tinted Fill + Crisp Contour Line) */}
                         <path
                           d={p}
-                          fill={
-                            redMountainStatus.isDry
-                              ? 'rgba(239, 68, 68, 0.30)'
-                              : redMountainStatus.isSinking
-                              ? 'rgba(220, 38, 38, 0.45)'
-                              : 'rgba(8, 43, 61, 0.92)'
-                          }
-                          stroke="#ef4444"
-                          strokeWidth={hoveredMountainZone === 'red' ? 4.5 : 3.2}
-                          strokeDasharray={redMountainStatus.isSinking ? '10 5' : undefined}
-                          filter="url(#redMountainGlow)"
+                          fill={RED_MOUNTAIN_ZONE.fillColor}
+                          stroke="#dc2626"
+                          strokeWidth={hoveredMountainZone === 'red' ? 3.5 : 2.2}
+                          filter={hoveredMountainZone === 'red' ? 'url(#redMountainGlow)' : undefined}
+                          strokeDasharray={redMountainStatus.isSinking ? '8 4' : undefined}
                           className="transition-all duration-300"
                         />
 
@@ -888,7 +1100,129 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                     ))}
                   </g>
 
-                  {/* C. MOUNTAIN PEAK TRIANGLE PINS & ELEVATION LABELS (⛰️) */}
+                  {/* D. 32 PRECISION MOUNTAIN SUBDIVISIONS INTERACTIVE NODES */}
+                  <g className="precision-mountain-subdivisions-nodes">
+                    {PRECISE_MOUNTAIN_SUBDIVISIONS.map((sub) => {
+                      const isSubmerged = seaLevelMeters >= sub.elevationMeters;
+                      const isRed = sub.mountainZone === 'red';
+                      const isYellow = sub.mountainZone === 'yellow';
+                      const color = isRed ? '#ef4444' : isYellow ? '#eab308' : '#22c55e';
+                      const strokeColor = isRed ? '#991b1b' : isYellow ? '#854d0e' : '#14532d';
+
+                      return (
+                        <g
+                          key={`mtn-sub-${sub.id}`}
+                          transform={`translate(${sub.x}, ${sub.y})`}
+                          className="cursor-pointer group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedMountainSubdivision(sub);
+                          }}
+                        >
+                          {/* Pulsing ring if safe above water */}
+                          {!isSubmerged && (
+                            <circle
+                              cx="0"
+                              cy="0"
+                              r={sub.r * 0.85}
+                              fill="none"
+                              stroke={color}
+                              strokeWidth="1.2"
+                              strokeDasharray="3 3"
+                              opacity={0.7}
+                            />
+                          )}
+
+                          {/* Base circle */}
+                          <circle
+                            cx="0"
+                            cy="0"
+                            r={sub.r * 0.65}
+                            fill={isSubmerged ? '#082b3d' : color}
+                            fillOpacity={isSubmerged ? 0.85 : 0.9}
+                            stroke={isSubmerged ? '#38bdf8' : '#ffffff'}
+                            strokeWidth="1.5"
+                            className="group-hover:scale-125 transition-transform"
+                          />
+
+                          {/* Icon symbol */}
+                          <text
+                            x="0"
+                            y="2.5"
+                            textAnchor="middle"
+                            fontSize="7"
+                            fill="#ffffff"
+                            fontWeight="bold"
+                          >
+                            {isSubmerged ? '🌊' : '▲'}
+                          </text>
+
+                          {/* Label pill */}
+                          <g transform="translate(0, -12)" className="opacity-80 group-hover:opacity-100 transition-opacity">
+                            <rect
+                              x={-24}
+                              y={-9}
+                              width={48}
+                              height={11}
+                              rx={3}
+                              fill={isSubmerged ? '#0f172a' : '#ffffff'}
+                              fillOpacity={0.92}
+                              stroke={strokeColor}
+                              strokeWidth={0.8}
+                            />
+                            <text
+                              x="0"
+                              y="-1"
+                              textAnchor="middle"
+                              fontSize="6.5"
+                              fontWeight="bold"
+                              fill={isSubmerged ? '#38bdf8' : strokeColor}
+                            >
+                              {sub.elevationMeters}m
+                            </text>
+                          </g>
+                        </g>
+                      );
+                    })}
+                  </g>
+
+                  {/* E. MOUNTAIN PEAK TRIANGLE PINS & ELEVATION LABELS (⛰️) */}
+                  {/* Green Mountain Peaks (40-95m) */}
+                  {GREEN_MOUNTAIN_ZONE.peaks.map((peak) => {
+                    const isSubmerged = seaLevelMeters >= peak.elevationMeters;
+                    return (
+                      <g
+                        key={`peak-green-${peak.id}`}
+                        transform={`translate(${peak.x}, ${peak.y})`}
+                        className="cursor-pointer group"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMountainPeak(peak);
+                        }}
+                      >
+                        <circle cx="0" cy="0" r={isSubmerged ? 6 : 8} fill="#22c55e" opacity={0.3} />
+                        <polygon
+                          points="0,-7 6,4 -6,4"
+                          fill={isSubmerged ? '#0c445f' : '#22c55e'}
+                          stroke="#14532d"
+                          strokeWidth="1.2"
+                        />
+                        <text
+                          x="8"
+                          y="2"
+                          fill={isSubmerged ? '#94a3b8' : '#14532d'}
+                          fontSize="7.5"
+                          fontWeight="bold"
+                          stroke="#ffffff"
+                          strokeWidth="2.0"
+                          paintOrder="stroke"
+                        >
+                          {peak.name.split(' (')[0]} ({peak.elevationMeters}m)
+                        </text>
+                      </g>
+                    );
+                  })}
+
                   {/* Yellow Mountain Peaks (100–300m) */}
                   {YELLOW_MOUNTAIN_ZONE.peaks.map((peak) => {
                     const isSubmerged = seaLevelMeters >= peak.elevationMeters;
@@ -944,7 +1278,6 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                           fill={isSubmerged ? '#082b3d' : '#ef4444'}
                           stroke="#ffffff"
                           strokeWidth="1.5"
-                          filter="url(#redMountainGlow)"
                         />
                         <text
                           x="11"
@@ -1302,12 +1635,16 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                   className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
                     selectedMountainPeak.elevationMeters >= 400
                       ? 'bg-rose-100 text-rose-800'
-                      : 'bg-amber-100 text-amber-800'
+                      : selectedMountainPeak.elevationMeters >= 100
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-emerald-100 text-emerald-800'
                   }`}
                 >
                   {selectedMountainPeak.elevationMeters >= 400
                     ? 'Red Mountain (400–1000m)'
-                    : 'Yellow Mountain (100–300m)'}
+                    : selectedMountainPeak.elevationMeters >= 100
+                    ? 'Yellow Mountain (100–300m)'
+                    : 'Green Mountain (40–95m)'}
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
@@ -1315,7 +1652,9 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
                 <span className="font-bold text-slate-800">
                   {selectedMountainPeak.elevationMeters >= 400
                     ? '400m – 1000m Sea Level'
-                    : '100m – 300m Sea Level'}
+                    : selectedMountainPeak.elevationMeters >= 100
+                    ? '100m – 300m Sea Level'
+                    : '40m – 95m Sea Level'}
                 </span>
               </div>
               <div className="flex justify-between py-1">
@@ -1336,6 +1675,109 @@ export const BangladeshSingleScreenMap: React.FC<BangladeshSingleScreenMapProps>
 
             <button
               onClick={() => setSelectedMountainPeak(null)}
+              className="mt-2 w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-fun font-bold text-xs"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SELECTED PRECISION MOUNTAIN SUBDIVISION MODAL */}
+      {selectedMountainSubdivision && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-slate-200 text-slate-800">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`p-2 rounded-2xl ${
+                    selectedMountainSubdivision.mountainZone === 'red'
+                      ? 'bg-rose-100 text-rose-700 border border-rose-300'
+                      : selectedMountainSubdivision.mountainZone === 'yellow'
+                      ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                      : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                  }`}
+                >
+                  <Mountain className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 leading-tight">
+                    {selectedMountainSubdivision.sectorName}
+                  </h3>
+                  <span className="text-xs text-slate-500 font-medium">
+                    {selectedMountainSubdivision.districtName} District · {selectedMountainSubdivision.division}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedMountainSubdivision(null)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="py-3 space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Elevation:</span>
+                <span className="font-bold font-mono text-sky-800 text-sm">
+                  {selectedMountainSubdivision.elevationMeters}m MSL
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Zone Category:</span>
+                <span
+                  className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                    selectedMountainSubdivision.mountainZone === 'red'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : selectedMountainSubdivision.mountainZone === 'yellow'
+                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  }`}
+                >
+                  {selectedMountainSubdivision.mountainZone === 'red'
+                    ? '🔴 Red High Mountain (400–1000m+)'
+                    : selectedMountainSubdivision.mountainZone === 'yellow'
+                    ? '🟡 Yellow Midland Range (100–300m)'
+                    : '🟢 Green Upland Terrace (40–95m)'}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Subdivision Index:</span>
+                <span className="font-mono text-slate-700 font-semibold">
+                  Precision Sector #{selectedMountainSubdivision.sectorIndex + 1}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Sector Population:</span>
+                <span className="font-semibold text-slate-800">
+                  {selectedMountainSubdivision.population.toLocaleString()} residents
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Submersion Level:</span>
+                <span className="font-bold text-slate-800">
+                  Sinks when sea level reaches {selectedMountainSubdivision.elevationMeters}m
+                </span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500">Current Status:</span>
+                <span
+                  className={`font-bold ${
+                    seaLevelMeters >= selectedMountainSubdivision.elevationMeters
+                      ? 'text-rose-600'
+                      : 'text-emerald-700'
+                  }`}
+                >
+                  {seaLevelMeters >= selectedMountainSubdivision.elevationMeters
+                    ? `🌊 Submerged (${(seaLevelMeters - selectedMountainSubdivision.elevationMeters).toFixed(1)}m underwater)`
+                    : `🛡️ Safe Above Water (+${(selectedMountainSubdivision.elevationMeters - seaLevelMeters).toFixed(1)}m buffer)`}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedMountainSubdivision(null)}
               className="mt-2 w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-fun font-bold text-xs"
             >
               Close

@@ -17,6 +17,7 @@ export interface DistrictSubdivision {
   x: number; // SVG X (0 - 896)
   y: number; // SVG Y (0 - 1200)
   r: number;
+  mountainZone?: 'red' | 'yellow' | 'green';
 }
 
 export interface BangladeshDistrictSummary {
@@ -14244,12 +14245,477 @@ export const ALL_DISTRICT_SUBDIVISIONS: DistrictSubdivision[] = [
   }
 ];
 
+// ============================================================================
+// 32 PRECISE MOUNTAIN SUBDIVISIONS (RED, YELLOW, AND GREEN ZONES)
+// 16 Red High Mountains (>400m - 1052m)
+// 11 Yellow Midland Mountains & Foothills (100m - 300m)
+// 5 Green Upland & Piedmont Terraces (40m - 95m)
+// ============================================================================
+export const PRECISE_MOUNTAIN_SUBDIVISIONS: DistrictSubdivision[] = [
+  // --- RED HIGH MOUNTAINS (400m - 1,052m) ---
+  {
+    id: "mtn_red_saka_haphong",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Saka Haphong (Mowdok Mual) Highest Summit",
+    sectorIndex: 8,
+    elevationMeters: 1052,
+    population: 12000,
+    x: 788,
+    y: 928,
+    r: 18,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_zow_tlang",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Zow Tlang (Modok Tlang) Strike Scarp",
+    sectorIndex: 9,
+    elevationMeters: 1021,
+    population: 14000,
+    x: 784,
+    y: 942,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_dumlong",
+    districtId: "rangamati",
+    districtName: "Rangamati",
+    division: "Chattogram",
+    sectorName: "Dumlong Peak & Bilaichhari Ridge",
+    sectorIndex: 8,
+    elevationMeters: 1014,
+    population: 16000,
+    x: 776,
+    y: 786,
+    r: 18,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_keokradong",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Keokradong Summit & Bogakine Crest",
+    sectorIndex: 10,
+    elevationMeters: 986,
+    population: 22000,
+    x: 762,
+    y: 884,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_tajingdong",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Tajingdong (Bijoy) Anticlinal Crest",
+    sectorIndex: 11,
+    elevationMeters: 967,
+    population: 24000,
+    x: 758,
+    y: 868,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_maithai_jama",
+    districtId: "rangamati",
+    districtName: "Rangamati",
+    division: "Chattogram",
+    sectorName: "Maithai Jama Haphong Anticlinal Crest",
+    sectorIndex: 9,
+    elevationMeters: 966,
+    population: 15000,
+    x: 780,
+    y: 760,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_mukhra_thuthai",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Mukhra Thuthai High Border Ridge",
+    sectorIndex: 12,
+    elevationMeters: 953,
+    population: 15000,
+    x: 782,
+    y: 912,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_thingdawlte",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Thingdawlte Tlang Precipitous Crest",
+    sectorIndex: 13,
+    elevationMeters: 945,
+    population: 18000,
+    x: 766,
+    y: 896,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_creashdong",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Creashdong Peak & Upper Ruma Ridge",
+    sectorIndex: 14,
+    elevationMeters: 942,
+    population: 17000,
+    x: 778,
+    y: 902,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_kapital_hill",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Kapital Peak & Remakri High Plateau",
+    sectorIndex: 15,
+    elevationMeters: 929,
+    population: 21000,
+    x: 772,
+    y: 936,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_rampha_tlang",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Rampha Tlang (Rungrang) Frontier Ridge",
+    sectorIndex: 16,
+    elevationMeters: 914,
+    population: 16000,
+    x: 770,
+    y: 955,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_langphe_summit",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Langphe Tlang Precipitous Crest",
+    sectorIndex: 17,
+    elevationMeters: 902,
+    population: 14000,
+    x: 786,
+    y: 888,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_sajek_high_crest",
+    districtId: "rangamati",
+    districtName: "Rangamati",
+    division: "Chattogram",
+    sectorName: "Sajek Valley Northern Frontier Crest",
+    sectorIndex: 10,
+    elevationMeters: 540,
+    population: 28000,
+    x: 758,
+    y: 608,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_marayan_thong",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Marayan Thong High Anticlinal Ridge",
+    sectorIndex: 18,
+    elevationMeters: 520,
+    population: 22000,
+    x: 735,
+    y: 920,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_hararganj_crest",
+    districtId: "moulvibazar",
+    districtName: "Moulvibazar",
+    division: "Sylhet",
+    sectorName: "Hararganj High Frontier Escarpment",
+    sectorIndex: 8,
+    elevationMeters: 460,
+    population: 31000,
+    x: 648,
+    y: 485,
+    r: 16,
+    mountainZone: "red"
+  },
+  {
+    id: "mtn_red_kasalong_scarp",
+    districtId: "rangamati",
+    districtName: "Rangamati",
+    division: "Chattogram",
+    sectorName: "Kasalong High Escarpment Ridge",
+    sectorIndex: 11,
+    elevationMeters: 420,
+    population: 19000,
+    x: 752,
+    y: 660,
+    r: 16,
+    mountainZone: "red"
+  },
+
+  // --- YELLOW MIDLAND MOUNTAINS & FOOTHILLS (100m - 300m) ---
+  {
+    id: "mtn_yel_sitakunda_chandranath",
+    districtId: "chattogram",
+    districtName: "Chattogram",
+    division: "Chattogram",
+    sectorName: "Chandranath Peak & Sitakunda High Ridge",
+    sectorIndex: 8,
+    elevationMeters: 310,
+    population: 64000,
+    x: 642,
+    y: 738,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_sajek_valley",
+    districtId: "rangamati",
+    districtName: "Rangamati",
+    division: "Chattogram",
+    sectorName: "Sajek Valley & Ruilui Para Ridge",
+    sectorIndex: 12,
+    elevationMeters: 300,
+    population: 32000,
+    x: 738,
+    y: 582,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_chimbuk_range",
+    districtId: "bandarban",
+    districtName: "Bandarban",
+    division: "Chattogram",
+    sectorName: "Chimbuk Hill Range Viewpoint Crest",
+    sectorIndex: 19,
+    elevationMeters: 285,
+    population: 38000,
+    x: 724,
+    y: 852,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_barkal_mountain",
+    districtId: "rangamati",
+    districtName: "Rangamati",
+    division: "Chattogram",
+    sectorName: "Barkal Mountain Foot & Karnaphuli Gorge",
+    sectorIndex: 13,
+    elevationMeters: 260,
+    population: 29000,
+    x: 742,
+    y: 718,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_alutila_ridge",
+    districtId: "khagrachhari",
+    districtName: "Khagrachhari",
+    division: "Chattogram",
+    sectorName: "Alutila High Ridge & Cave Formation",
+    sectorIndex: 8,
+    elevationMeters: 250,
+    population: 42000,
+    x: 688,
+    y: 654,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_patharia_crest",
+    districtId: "moulvibazar",
+    districtName: "Moulvibazar",
+    division: "Sylhet",
+    sectorName: "Patharia High Range & Madhobkunda Crest",
+    sectorIndex: 9,
+    elevationMeters: 240,
+    population: 48000,
+    x: 668,
+    y: 432,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_jaflong_dawki_wall",
+    districtId: "sylhet",
+    districtName: "Sylhet",
+    division: "Sylhet",
+    sectorName: "Jaflong Dawki Border Wall & Tamabil Scarp",
+    sectorIndex: 8,
+    elevationMeters: 220,
+    population: 48000,
+    x: 615,
+    y: 352,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_tarap_hill_range",
+    districtId: "habiganj",
+    districtName: "Habiganj",
+    division: "Sylhet",
+    sectorName: "Tarap Hill Range & Rema-Kalenga Ridge",
+    sectorIndex: 8,
+    elevationMeters: 195,
+    population: 42000,
+    x: 565,
+    y: 530,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_gajni_garo",
+    districtId: "sherpur",
+    districtName: "Sherpur",
+    division: "Mymensingh",
+    sectorName: "Gajni Garo Border Fault Escarpment",
+    sectorIndex: 8,
+    elevationMeters: 180,
+    population: 41000,
+    x: 435,
+    y: 352,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_bijoypur_escarpment",
+    districtId: "netrokona",
+    districtName: "Netrokona",
+    division: "Mymensingh",
+    sectorName: "Bijoypur White Clay Mountain Ridge",
+    sectorIndex: 8,
+    elevationMeters: 145,
+    population: 35000,
+    x: 495,
+    y: 358,
+    r: 18,
+    mountainZone: "yellow"
+  },
+  {
+    id: "mtn_yel_madhupur_clay_crest",
+    districtId: "tangail",
+    districtName: "Tangail",
+    division: "Dhaka",
+    sectorName: "Madhupur Forest Pleistocene Clay Crest",
+    sectorIndex: 8,
+    elevationMeters: 115,
+    population: 58000,
+    x: 436,
+    y: 475,
+    r: 18,
+    mountainZone: "yellow"
+  },
+
+  // --- GREEN LOW UPLANDS & PIEDMONT TERRACES (40m - 95m) ---
+  {
+    id: "mtn_grn_tetulia_piedmont",
+    districtId: "panchagarh",
+    districtName: "Panchagarh",
+    division: "Rangpur",
+    sectorName: "Tetulia High Himalayan Piedmont Ridge",
+    sectorIndex: 8,
+    elevationMeters: 95,
+    population: 46000,
+    x: 148,
+    y: 85,
+    r: 20,
+    mountainZone: "green"
+  },
+  {
+    id: "mtn_grn_banglabandha_crest",
+    districtId: "panchagarh",
+    districtName: "Panchagarh",
+    division: "Rangpur",
+    sectorName: "Banglabandha Kanchenjunga Frontier Piedmont",
+    sectorIndex: 9,
+    elevationMeters: 92,
+    population: 44000,
+    x: 135,
+    y: 68,
+    r: 20,
+    mountainZone: "green"
+  },
+  {
+    id: "mtn_grn_bhanugach_ridge",
+    districtId: "moulvibazar",
+    districtName: "Moulvibazar",
+    division: "Sylhet",
+    sectorName: "Bhanugach Reserve Ridge & Low Tea Terrace",
+    sectorIndex: 10,
+    elevationMeters: 85,
+    population: 55000,
+    x: 602,
+    y: 502,
+    r: 20,
+    mountainZone: "green"
+  },
+  {
+    id: "mtn_grn_kantajew_fan",
+    districtId: "dinajpur",
+    districtName: "Dinajpur",
+    division: "Rangpur",
+    sectorName: "Kantajew Upper Alluvial Piedmont Fan",
+    sectorIndex: 8,
+    elevationMeters: 78,
+    population: 51000,
+    x: 235,
+    y: 285,
+    r: 20,
+    mountainZone: "green"
+  },
+  {
+    id: "mtn_grn_jaintiapur_terrace",
+    districtId: "sylhet",
+    districtName: "Sylhet",
+    division: "Sylhet",
+    sectorName: "Jaintiapur Northern Alluvial Terrace & Tea Escarpment",
+    sectorIndex: 9,
+    elevationMeters: 68,
+    population: 46000,
+    x: 635,
+    y: 375,
+    r: 20,
+    mountainZone: "green"
+  }
+];
+
+// Combine all standard district subdivisions with the 32 precision mountain subdivisions
+ALL_DISTRICT_SUBDIVISIONS.push(...PRECISE_MOUNTAIN_SUBDIVISIONS);
+
 export const TOTAL_BANGLADESH_POPULATION = 167546000;
 
 /**
  * Calculates displaced population and flooded sectors at exact sea level rise.
  * Floods 1m at 1m, 2m at 2m, 3m at 3m, 4m at 4m and so on.
- * In Chattogram and Sylhet, lower parts sink before, higher parts sink later.
+ * In Chattogram, Sylhet, and border mountain ranges, lower parts sink before, higher parts sink later.
  */
 export function calculateDisplacedAndFloodedSectors(seaLevelMeters: number) {
   if (seaLevelMeters <= 0) {
@@ -14289,7 +14755,13 @@ export function calculateDisplacedAndFloodedSectors(seaLevelMeters: number) {
     });
   }
 
-  // Evaluate every 1/8th subdivision across the entire country
+  // Count total sectors per district
+  const districtTotalSectors = new Map<string, number>();
+  for (const sub of ALL_DISTRICT_SUBDIVISIONS) {
+    districtTotalSectors.set(sub.districtId, (districtTotalSectors.get(sub.districtId) || 0) + 1);
+  }
+
+  // Evaluate every subdivision across the entire country including mountain sectors
   for (const sub of ALL_DISTRICT_SUBDIVISIONS) {
     if (seaLevelMeters >= sub.elevationMeters) {
       floodedSubdivisions.push(sub);
@@ -14304,10 +14776,11 @@ export function calculateDisplacedAndFloodedSectors(seaLevelMeters: number) {
   }
 
   // Finalize district status summaries
-  for (const [, stat] of districtMap.entries()) {
-    stat.floodedPercent = Number(((stat.submergedSectorsCount / 8) * 100).toFixed(1));
-    stat.isFullySubmerged = stat.submergedSectorsCount === 8;
-    stat.isPartiallySubmerged = stat.submergedSectorsCount > 0 && stat.submergedSectorsCount < 8;
+  for (const [distId, stat] of districtMap.entries()) {
+    const total = districtTotalSectors.get(distId) || 8;
+    stat.floodedPercent = Number(((stat.submergedSectorsCount / total) * 100).toFixed(1));
+    stat.isFullySubmerged = stat.submergedSectorsCount >= total;
+    stat.isPartiallySubmerged = stat.submergedSectorsCount > 0 && stat.submergedSectorsCount < total;
   }
 
   // Calculate national flooded percentage and land area

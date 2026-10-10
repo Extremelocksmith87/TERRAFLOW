@@ -37,9 +37,13 @@ export default function App() {
   const [displacedPopulation, setDisplacedPopulation] = useState<number>(0);
   const [showPopulationOverlay, setShowPopulationOverlay] = useState<boolean>(false);
 
-  // Start simulation trigger: triggers realistic data download simulation for Bangladesh
+  // Start simulation trigger: immediately transitions to simulator without screen animation
   const handleStartSimulation = () => {
-    setIsDownloading(true);
+    setActiveView('simulator');
+    setSeaLevelMeters(0);
+    setIceMeltPercent(0);
+    setDisplacedPopulation(0);
+    setShowPopulationOverlay(false);
   };
 
   // Download complete handler

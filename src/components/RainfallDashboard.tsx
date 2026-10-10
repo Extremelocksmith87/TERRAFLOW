@@ -583,39 +583,47 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
                         }`}
                       >
                         <div className="text-xs">Cat {cat}</div>
-                        <div className="text-[9px] font-mono opacity-80">
-                          {cat === 1 ? '1.6m' : cat === 2 ? '2.8m' : cat === 3 ? '4.5m' : cat === 4 ? '6.8m' : '9.2m'}
+                        <div className="text-[9px] font-mono opacity-90">
+                          {cat === 1 ? '+1.5m' : cat === 2 ? '+2.4m' : cat === 3 ? '+3.6m' : cat === 4 ? '+6.2m' : '+8.6m'}
                         </div>
                       </button>
                     ))}
                   </div>
 
-                  {/* Cyclone Specs Display */}
-                  <div className="bg-white p-2 rounded-xl border border-rose-100 flex items-center justify-between text-[11px]">
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase">Wind Velocity</span>
-                      <span className="font-bold font-mono text-slate-800">
-                        {cycloneCategory === 1
-                          ? '120 km/h'
-                          : cycloneCategory === 2
-                          ? '160 km/h'
-                          : cycloneCategory === 3
-                          ? '195 km/h'
-                          : cycloneCategory === 4
-                          ? '235 km/h'
-                          : '260+ km/h'}
-                      </span>
+                  {/* Cyclone Specs Display with Real Researched Empirical Metrics */}
+                  <div className="bg-white p-2.5 rounded-xl border border-rose-200 space-y-1.5 text-[11px]">
+                    <div className="grid grid-cols-3 gap-1 pb-1.5 border-b border-slate-100 text-center">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Researched Surge</span>
+                        <span className="font-bold font-mono text-rose-700 text-xs">
+                          +{floodImpact.equivalentSurgeMeters}m MSL
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Wind Velocity</span>
+                        <span className="font-bold font-mono text-slate-800 text-xs">
+                          {cycloneCategory === 1
+                            ? '119-153 km/h'
+                            : cycloneCategory === 2
+                            ? '154-177 km/h'
+                            : cycloneCategory === 3
+                            ? '178-208 km/h'
+                            : cycloneCategory === 4
+                            ? '209-251 km/h'
+                            : '252+ km/h'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Flooded Land</span>
+                        <span className="font-bold font-mono text-sky-800 text-xs">
+                          {floodImpact.floodedPercent}% Land
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase">Storm Surge</span>
-                      <span className="font-bold font-mono text-rose-700">
-                        +{floodImpact.equivalentSurgeMeters} meters
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase">Impact Severity</span>
-                      <span className="font-bold text-rose-600">
-                        {cycloneCategory >= 4 ? 'Devastating' : cycloneCategory >= 3 ? 'Destructive' : 'Substantial'}
+                    <div className="flex items-center justify-between text-[10.5px]">
+                      <span className="text-slate-600 font-medium">Exclamation Alerts (!):</span>
+                      <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                        ⚠️ {floodImpact.atRiskDistrictIds.length} Coastal Districts
                       </span>
                     </div>
                   </div>

@@ -137,6 +137,12 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
         onSeaLevelChange(maxElev);
         onIceMeltChange(100);
         setIsPlaying(false);
+        // Automatically reset back to 0m safe baseline after holding 2.5s at full peak submersion
+        setTimeout(() => {
+          onSeaLevelChange(0);
+          onIceMeltChange(0);
+          onDisplacedPopulationChange(0);
+        }, 2500);
         return;
       }
 
@@ -396,10 +402,11 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
                   onIceMeltChange(0);
                   onDisplacedPopulationChange(0);
                 }}
-                title="Reset to 0m Baseline"
-                className="btn-cartoon-white p-1 rounded-xl text-slate-600 hover:text-slate-900"
+                title="Reset simulator to 0m Baseline"
+                className="btn-cartoon-white px-2 py-1 rounded-xl text-[11px] font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 shadow-xs"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3 text-sky-600" />
+                <span>Reset (0m)</span>
               </button>
             </div>
           </div>

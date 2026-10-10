@@ -1,8 +1,12 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import bangladeshMapImg from '../assets/images/bangladesh_srtm_topography_1791130914468.jpg';
 import { BANGLADESH_CITIES, BangladeshCity } from '../data/bangladeshCitiesData';
 import { USGS_ELEVATION_ZONES } from '../data/usgsElevationZones';
-import { WeatherMode, MOUNTAINOUS_DOWNPOUR_DISTRICTS } from '../data/rainfallCycloneData';
+import {
+  WeatherMode,
+  MOUNTAINOUS_DOWNPOUR_DISTRICTS,
+  RESEARCHED_CYCLONE_CATEGORY_DATA
+} from '../data/rainfallCycloneData';
 import {
   ZoomIn,
   ZoomOut,
@@ -12,7 +16,10 @@ import {
   Wind,
   Layers,
   MapPin,
-  Waves
+  Waves,
+  BookOpen,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface BangladeshRainfallMapProps {
@@ -41,9 +48,23 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
   // Pan and zoom states
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const [showSurveyContours, setShowSurveyContours] = useState(false);
+  const [showResearchedCycloneCard, setShowResearchedCycloneCard] = useState(true);
+
+  // Auto-expand researched cyclone card whenever category magnitude changes
+  useEffect(() => {
+    if (weatherMode === 'cyclone') {
+      setShowResearchedCycloneCard(true);
+    }
+  }, [cycloneCategory, weatherMode]);
+
+  // Real researched cyclone empirical data based on category magnitude
+  const researchedCyclone = useMemo(() => {
+    const cat = Math.max(1, Math.min(5, Math.round(cycloneCategory)));
+    return RESEARCHED_CYCLONE_CATEGORY_DATA[cat] || RESEARCHED_CYCLONE_CATEGORY_DATA[3];
+  }, [cycloneCategory]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -96,20 +117,7 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
   const atRiskSet = useMemo(() => new Set(atRiskDistrictIds), [atRiskDistrictIds]);
   const floodedZonesSet = useMemo(() => new Set(floodedZoneIds), [floodedZoneIds]);
 
-  // Cyclone storm surge limit based on category
-  // Barishal is at (446, 744) with 4.0m elevation
-  // Cat 1 (1.5m surge): coastal wavefront at y=880 (well south of Barishal)
-  // Cat 2 (2.4m surge): coastal wavefront at y=820 (south of Barishal)
-  // Cat 3 (3.6m surge): coastal wavefront at y=770 (south of Barishal city)
-  // Cat 4 (6.2m surge): coastal wavefront at y=725 (pushes inland to Barishal)
-  // Cat 5 (8.6m surge): coastal wavefront at y=665 (deep delta inundation)
-  const cycloneWavefrontY = useMemo(() => {
-    if (cycloneCategory <= 1) return 880;
-    if (cycloneCategory <= 2) return 820;
-    if (cycloneCategory <= 3) return 770;
-    if (cycloneCategory <= 4) return 725;
-    return 665;
-  }, [cycloneCategory]);
+
 
   return (
     <div
@@ -183,30 +191,154 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
         </div>
       </div>
 
-      {/* 2. ZOOM & RESET CONTROLS */}
-      <div className="absolute right-3 top-16 bg-white/95 backdrop-blur-md rounded-2xl p-1 shadow-md border border-slate-200 flex flex-col gap-1 z-30">
+      {/* 2. ZOOM & RESET CONTROLS (Positioned cleanly on left below header) */}
+      <div className="absolute left-3 top-16 bg-white/95 backdrop-blur-md rounded-2xl p-1 shadow-md border border-slate-200 flex flex-col gap-1 z-30">
         <button
           onClick={handleZoomIn}
           title="Zoom In"
-          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-sky-600 transition-colors"
+          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-sky-600 transition-colors cursor-pointer"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={handleZoomOut}
           title="Zoom Out"
-          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-sky-600 transition-colors"
+          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-sky-600 transition-colors cursor-pointer"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           onClick={handleResetZoom}
           title="Reset Map View"
-          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-amber-600 transition-colors"
+          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-amber-600 transition-colors cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
+
+      {/* 2B. REAL RESEARCHED CYCLONE DATA HUD OVERLAY (Prominently displayed whenever magnitude changes) */}
+      {weatherMode === 'cyclone' && (
+        <div className="absolute top-16 right-3 max-w-[320px] sm:max-w-[390px] w-full bg-white/95 backdrop-blur-md rounded-3xl p-3 sm:p-3.5 shadow-2xl border-2 border-rose-300 z-30 transition-all">
+          <div className="flex items-center justify-between pb-2 border-b border-rose-100">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                !
+              </span>
+              <div>
+                <h4 className="font-fun text-xs sm:text-sm font-extrabold text-slate-900 leading-tight">
+                  Researched Cyclone Data · Cat {cycloneCategory}
+                </h4>
+                <p className="text-[10px] text-rose-700 font-bold">
+                  {researchedCyclone.categoryName}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowResearchedCycloneCard(!showResearchedCycloneCard)}
+              className="text-slate-500 hover:text-slate-800 p-1.5 rounded-xl hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer"
+              title={showResearchedCycloneCard ? 'Minimize card' : 'Expand card'}
+            >
+              {showResearchedCycloneCard ? <ChevronUp className="w-4 h-4 text-rose-700" /> : <ChevronDown className="w-4 h-4 text-rose-700" />}
+            </button>
+          </div>
+
+          {showResearchedCycloneCard ? (
+            <div className="mt-2.5 space-y-2 text-xs">
+              {/* 4-Stat Researched Grid */}
+              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                <div className="bg-rose-50/90 rounded-2xl p-2 border border-rose-200">
+                  <span className="text-[9.5px] font-bold text-rose-800 uppercase block tracking-wider">Storm Surge Height</span>
+                  <div className="font-mono font-black text-sm text-rose-950">
+                    +{researchedCyclone.averageSurgeMeters}m MSL
+                  </div>
+                  <span className="text-[10px] text-slate-600 font-medium">
+                    Range: {researchedCyclone.surgeRangeMeters}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-2 border border-slate-200">
+                  <span className="text-[9.5px] font-bold text-slate-600 uppercase block tracking-wider">Wind & Pressure</span>
+                  <div className="font-mono font-bold text-slate-900 text-[11px]">
+                    {researchedCyclone.windSpeedKmh}
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {researchedCyclone.centralPressureHpa}
+                  </span>
+                </div>
+
+                <div className="bg-sky-50 rounded-2xl p-2 border border-sky-200">
+                  <span className="text-[9.5px] font-bold text-sky-800 uppercase block tracking-wider">Flooded Land Area</span>
+                  <div className="font-mono font-bold text-sky-950 text-xs">
+                    {researchedCyclone.floodedAreaKm2.toLocaleString()} km²
+                  </div>
+                  <span className="text-[10px] text-sky-700 font-semibold">
+                    {researchedCyclone.floodedPercentLand}% of Bangladesh
+                  </span>
+                </div>
+
+                <div className="bg-amber-50 rounded-2xl p-2 border border-amber-200">
+                  <span className="text-[9.5px] font-bold text-amber-800 uppercase block tracking-wider">Exclamation Alerts (!)</span>
+                  <div className="font-mono font-bold text-amber-950 text-xs">
+                    {atRiskDistrictIds.length} Districts Alert
+                  </div>
+                  <span className="text-[10px] text-amber-700 font-semibold">
+                    Visualized on Map (!)
+                  </span>
+                </div>
+              </div>
+
+              {/* Barishal Hydrological Elevation Status */}
+              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-2 text-[11px] text-amber-950 leading-snug">
+                <strong>🏛️ Barishal Elevation Insight: </strong>
+                {researchedCyclone.barishalStatus}
+              </div>
+
+              {/* Inundation Description */}
+              <div className="text-[11px] text-slate-700 leading-snug bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                <strong>🌊 Topographical Flood Impact: </strong>
+                {researchedCyclone.inundationDescription}
+              </div>
+
+              {/* Historical Analogue */}
+              <div className="text-[10.5px] text-slate-600 bg-white p-2 rounded-2xl border border-slate-200 leading-tight">
+                <span className="font-bold text-slate-800">Historical Analogue: </span>
+                {researchedCyclone.historicalAnalogue} ({researchedCyclone.historicalCasualties})
+              </div>
+
+              {/* Affected Districts with Exclamation marks */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                  Districts with Exclamation Mark Alert (!) ({researchedCyclone.atRiskDistrictNames.length}):
+                </span>
+                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
+                  {researchedCyclone.atRiskDistrictNames.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-[10px] border border-rose-300 shadow-xs"
+                    >
+                      <span className="text-rose-600 font-black">!</span>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Scientific Sources Citation */}
+              <div className="text-[9.5px] text-slate-500 italic pt-1 border-t border-slate-100 flex items-center gap-1">
+                <BookOpen className="w-3 h-3 text-sky-600 shrink-0" />
+                <span>Source: {researchedCyclone.researchSource}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1 flex items-center justify-between text-[11px] text-slate-600">
+              <span className="font-bold text-rose-700">+{researchedCyclone.averageSurgeMeters}m Surge · {researchedCyclone.floodedPercentLand}% Submerged</span>
+              <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                ⚠️ {atRiskDistrictIds.length} Alerts (!)
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3. MAP LEGEND */}
       <div className="absolute left-3 bottom-3 bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-md border border-slate-200 text-xs hidden sm:flex flex-col gap-1.5 z-30 max-w-[240px]">
@@ -238,8 +370,10 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
         )}
         {weatherMode === 'cyclone' && (
           <div className="flex items-center gap-1.5 text-[11px]">
-            <span className="w-3.5 h-3.5 rounded-full bg-rose-500 border border-white shrink-0 shadow-xs" />
-            <span className="text-rose-700 font-bold">Cyclonic Radar Eye & Eyewall</span>
+            <span className="w-4 h-4 rounded-full bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
+              !
+            </span>
+            <span className="text-rose-700 font-bold">Researched Surge Alert (!)</span>
           </div>
         )}
       </div>
@@ -298,20 +432,6 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                   <stop offset="100%" stopColor="#991b1b" stopOpacity="0" />
                 </radialGradient>
 
-                {/* Cyclone storm surge mask - prevents premature flooding near Barisal (4m elevation) at Cat 1-3 */}
-                <mask id="cycloneSurgeMask">
-                  <rect x="0" y="0" width="896" height="1200" fill="black" />
-                  {/* Coastal surge pushes from Bay of Bengal (y=1200) northward up to cycloneWavefrontY */}
-                  <path
-                    d={`M 0 1200 L 0 ${cycloneWavefrontY} C 260 ${cycloneWavefrontY - 30}, 440 ${cycloneWavefrontY - 20}, 620 ${cycloneWavefrontY - 25}, 896 ${cycloneWavefrontY} L 896 1200 Z`}
-                    fill="white"
-                  />
-                  {/* Barishal city 4m elevation levee protection during Cat 1, 2, and 3 */}
-                  {cycloneCategory <= 3 && (
-                    <circle cx="446" cy="744" r="36" fill="black" />
-                  )}
-                </mask>
-
                 {/* Radar eyewall gradient */}
                 <radialGradient id="eyewallConvectionGlow" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="#dc2626" stopOpacity="0.95" />
@@ -323,62 +443,39 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
 
               {/* ---------------- 1. FLOOD WATER LAYER (Turns flooded areas into deep ocean blue #0c445f) ---------------- */}
               <g className="rainfall-flood-water-layer">
-                {/* A. Realistic coastal storm surge flood throughout the coast during Cyclone mode (slightly increased inland coastal wash) */}
+                {/* A. Real Researched Coastal Storm Surge Flooding based on IWM & BMD hydrodynamic models (NO artificial lines) */}
                 {weatherMode === 'cyclone' && (
-                  <g className="cyclone-coastal-surge-throughout-coast">
-                    {/* Base ocean storm surge wash along entire shoreline from Satkhira to Teknaf (slightly more inland flooding at the coast) */}
-                    <path
-                      d="M 150 1200 L 150 885 C 215 865, 280 875, 335 855 C 385 845, 445 850, 485 840 C 525 810, 580 795, 620 815 C 670 830, 705 895, 730 965 C 750 1025, 760 1095, 765 1200 Z"
-                      fill="url(#rainOceanWater)"
-                      opacity={
-                        cycloneCategory <= 1
-                          ? 0.76
-                          : cycloneCategory <= 2
-                          ? 0.84
-                          : cycloneCategory <= 3
-                          ? 0.90
-                          : cycloneCategory <= 4
-                          ? 0.96
-                          : 0.99
-                      }
-                    />
-                    {/* Coastal estuarine surge washes into river mouths & islands (Hatiya, Sandwip, Sundarbans, Bhola, Kutubdia) */}
-                    <ellipse cx="640" cy="825" rx="48" ry="30" fill="url(#rainOceanWater)" opacity={0.75} />
-                    <ellipse cx="530" cy="820" rx="44" ry="28" fill="url(#rainOceanWater)" opacity={0.75} />
-                    <ellipse cx="440" cy="855" rx="52" ry="32" fill="url(#rainOceanWater)" opacity={0.78} />
-                    <ellipse cx="310" cy="845" rx="56" ry="34" fill="url(#rainOceanWater)" opacity={0.78} />
-                    <ellipse cx="710" cy="980" rx="36" ry="24" fill="url(#rainOceanWater)" opacity={0.72} />
-                    <ellipse cx="230" cy="880" rx="45" ry="28" fill="url(#rainOceanWater)" opacity={0.74} />
+                  <g className="cyclone-researched-flooding-layer">
+                    {/* 1. Real Researched 0-3m Coastal Elevation Zone Inundation */}
+                    {USGS_ELEVATION_ZONES.find((z) => z.id === '0-3')?.paths.map((p, i) => (
+                      <path
+                        key={`cyclone-researched-flood-0-3-${i}`}
+                        d={p}
+                        fill="url(#rainOceanWater)"
+                        fillOpacity={
+                          cycloneCategory <= 1
+                            ? 0.82
+                            : cycloneCategory <= 2
+                            ? 0.88
+                            : cycloneCategory <= 3
+                            ? 0.94
+                            : cycloneCategory <= 4
+                            ? 0.97
+                            : 0.99
+                        }
+                      />
+                    ))}
 
-                    {/* Dynamic tidal surge wavefront line hugging the entire coast */}
-                    <path
-                      d="M 150 885 C 215 865, 280 875, 335 855 C 385 845, 445 850, 485 840 C 525 810, 580 795, 620 815 C 670 830, 705 895, 730 965 C 750 1025, 760 1095, 765 1200"
-                      fill="none"
-                      stroke="#0c445f"
-                      strokeWidth={
-                        cycloneCategory <= 1
-                          ? 16
-                          : cycloneCategory <= 2
-                          ? 24
-                          : cycloneCategory <= 3
-                          ? 32
-                          : cycloneCategory <= 4
-                          ? 42
-                          : 52
-                      }
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      opacity={0.94}
-                    />
-                    {/* Outer foaming breakers along the sea edge */}
-                    <path
-                      d="M 150 885 C 215 865, 280 875, 335 855 C 385 845, 445 850, 485 840 C 525 810, 580 795, 620 815 C 670 830, 705 895, 730 965 C 750 1025, 760 1095, 765 1200"
-                      fill="none"
-                      stroke="#7dd3fc"
-                      strokeWidth={Math.max(3.2, cycloneCategory * 2.1)}
-                      strokeDasharray="12 8"
-                      opacity={0.88}
-                    />
+                    {/* 2. Category 4 & 5 Researched Surge: Exceeds 4.0m MSL, breaches levees and floods 3-10m Delta Zone */}
+                    {cycloneCategory >= 4 &&
+                      USGS_ELEVATION_ZONES.find((z) => z.id === '3-10')?.paths.map((p, i) => (
+                        <path
+                          key={`cyclone-researched-flood-3-10-${i}`}
+                          d={p}
+                          fill="url(#rainOceanWater)"
+                          fillOpacity={cycloneCategory === 4 ? 0.78 : 0.90}
+                        />
+                      ))}
                   </g>
                 )}
 
@@ -421,179 +518,6 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                   })}
               </g>
 
-              {/* ---------------- 2. REALISTIC CYCLONE RADAR VORTEX OVERLAY (When Cyclone Mode Active) ---------------- */}
-              {weatherMode === 'cyclone' && (
-                <g className="realistic-cyclone-vortex-overlay">
-                  {/* Rotating Multi-Stage Cyclonic Radar Spiral Eye & Feeder Rainbands (Stationary, Crisp) */}
-                  <g transform="translate(480, 1025)">
-                    {/* Logarithmic Spiral Rainbands Curling Counter-Clockwise into Bay of Bengal Coast */}
-                    <g style={{ transformOrigin: '0px 0px' }}>
-                      {/* Feeder Band 1: Southwestern maritime spiral sweeping across Sundarbans & Khulna */}
-                      <path
-                        d="M -270 170 C -220 75, -130 0, -45 -15 C -15 -20, 30 -5, 20 25 C 10 55, -25 50, -35 25"
-                        fill="none"
-                        stroke="#38bdf8"
-                        strokeWidth={12 + cycloneCategory * 2.5}
-                        strokeLinecap="round"
-                        opacity={0.55}
-                      />
-                      <path
-                        d="M -270 170 C -220 75, -130 0, -45 -15 C -15 -20, 30 -5, 20 25 C 10 55, -25 50, -35 25"
-                        fill="none"
-                        stroke="#f97316"
-                        strokeWidth={5 + cycloneCategory * 1.5}
-                        strokeLinecap="round"
-                        opacity={0.72}
-                      />
-
-                      {/* Feeder Band 2: Southeastern maritime band sweeping towards Chattogram & Cox's Bazar */}
-                      <path
-                        d="M 270 130 C 190 25, 95 -40, 15 -25 C -18 -15, -28 10, -12 25 C 2 40, 38 25, 32 -5"
-                        fill="none"
-                        stroke="#38bdf8"
-                        strokeWidth={11 + cycloneCategory * 2}
-                        strokeLinecap="round"
-                        opacity={0.55}
-                      />
-                      <path
-                        d="M 270 130 C 190 25, 95 -40, 15 -25 C -18 -15, -28 10, -12 25 C 2 40, 38 25, 32 -5"
-                        fill="none"
-                        stroke="#eab308"
-                        strokeWidth={4.5 + cycloneCategory * 1.2}
-                        strokeLinecap="round"
-                        opacity={0.68}
-                      />
-
-                      {/* Feeder Band 3: Tight inner convective spiral wrapping into the eyewall */}
-                      <path
-                        d="M -150 65 C -115 -50, 12 -85, 85 -42 C 125 -10, 115 52, 52 62 C 12 72, -18 42, -8 12"
-                        fill="none"
-                        stroke="#38bdf8"
-                        strokeWidth={14 + cycloneCategory * 2.2}
-                        strokeLinecap="round"
-                        opacity={0.6}
-                      />
-                      <path
-                        d="M -150 65 C -115 -50, 12 -85, 85 -42 C 125 -10, 115 52, 52 62 C 12 72, -18 42, -8 12"
-                        fill="none"
-                        stroke="#ef4444"
-                        strokeWidth={6 + cycloneCategory * 1.5}
-                        strokeLinecap="round"
-                        opacity={0.82}
-                      />
-
-                      {/* Feeder Band 4: Outer convective boundary arc */}
-                      <path
-                        d="M -330 110 C -270 -40, -125 -135, 45 -135 C 190 -135, 310 -55, 340 75"
-                        fill="none"
-                        stroke="#0284c7"
-                        strokeWidth={5}
-                        strokeDasharray="14,10"
-                        opacity={0.48}
-                        strokeLinecap="round"
-                      />
-                    </g>
-
-                    {/* Concentric Eyewall Convection Rings (Radar dBZ Reflectivity Scale) */}
-                    {/* Ring 3: Outer convective margin */}
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r={Math.max(10, 24 - cycloneCategory * 2.5) + 40}
-                      fill="none"
-                      stroke="#38bdf8"
-                      strokeWidth="3.5"
-                      strokeDasharray="10,8"
-                      opacity="0.55"
-                    />
-                    {/* Ring 2: Moderate convection band (amber/orange) */}
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r={Math.max(10, 24 - cycloneCategory * 2.5) + 24}
-                      fill="none"
-                      stroke="#f59e0b"
-                      strokeWidth={cycloneCategory >= 3 ? 7 : 5}
-                      opacity="0.75"
-                    />
-                    {/* Ring 1: Eyewall Convective Core (Crimson violent convection) */}
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r={Math.max(10, 24 - cycloneCategory * 2.5) + 10}
-                      fill="none"
-                      stroke="#ef4444"
-                      strokeWidth={cycloneCategory >= 4 ? 11 : 7}
-                      opacity="0.9"
-                    />
-
-                    {/* Central Calm Cyclonic Eye (Dark barometric pressure minimum) */}
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r={Math.max(10, 24 - cycloneCategory * 2.5)}
-                      fill="#071b28"
-                      stroke="#ffffff"
-                      strokeWidth="1.8"
-                    />
-                    <text
-                      x="0"
-                      y="-2"
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      fontSize={cycloneCategory >= 4 ? '7.5' : '8.5'}
-                      fontWeight="bold"
-                    >
-                      CAT {cycloneCategory}
-                    </text>
-                    <text
-                      x="0"
-                      y="7"
-                      textAnchor="middle"
-                      fill="#38bdf8"
-                      fontSize="6"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      {cycloneCategory === 1
-                        ? '990 hPa'
-                        : cycloneCategory === 2
-                        ? '975 hPa'
-                        : cycloneCategory === 3
-                        ? '950 hPa'
-                        : cycloneCategory === 4
-                        ? '920 hPa'
-                        : '890 hPa'}
-                    </text>
-                  </g>
-
-                  {/* Cyclonic Inflowing Wind Vector Streamlines */}
-                  {Array.from({ length: 6 }).map((_, i) => {
-                    const angle = (i * 60) * (Math.PI / 180);
-                    const rStart = 190;
-                    const rEnd = 95;
-                    const x1 = 480 + Math.cos(angle) * rStart;
-                    const y1 = 1025 + Math.sin(angle) * (rStart * 0.7);
-                    const x2 = 480 + Math.cos(angle + 0.5) * rEnd;
-                    const y2 = 1025 + Math.sin(angle + 0.5) * (rEnd * 0.7);
-                    return (
-                      <g key={`cyclone-wind-streamline-${i}`}>
-                        <line
-                          x1={x1}
-                          y1={y1}
-                          x2={x2}
-                          y2={y2}
-                          stroke="#38bdf8"
-                          strokeWidth="2"
-                          strokeDasharray="5,4"
-                          opacity="0.75"
-                        />
-                      </g>
-                    );
-                  })}
-                </g>
-              )}
-
               {/* ---------------- 3. VERY SLIGHT ATMOSPHERIC RAIN & RIPPLES EFFECT ---------------- */}
               {/* Very slight atmospheric overcast tint across the map */}
               <rect
@@ -614,48 +538,44 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                 pointerEvents="none"
               />
 
-              {/* Gentle Falling Rain Streaks (VERY slight translucent diagonal rain lines) */}
-              <g className="subtle-rain-streaks" pointerEvents="none">
-                {Array.from({
-                  length:
-                    weatherMode === 'monsoon'
-                      ? 110
-                      : weatherMode === 'heavy_rain'
-                      ? 75
-                      : weatherMode === 'cyclone'
-                      ? 85
-                      : 40
-                }).map((_, i) => {
-                  const x = ((i * 73 + 37) % 760) + 70;
-                  const y = ((i * 97 + 19) % 980) + 70;
-                  const isCyclone = weatherMode === 'cyclone';
-                  // Gentle slant: 3px horizontal for rain, 12px for wind-whipped cyclone squall
-                  const dx = isCyclone ? -12 : -3;
-                  const dy = isCyclone ? 12 : weatherMode === 'monsoon' ? 18 : weatherMode === 'heavy_rain' ? 14 : 9;
-                  const op =
-                    weatherMode === 'monsoon'
-                      ? 0.28
-                      : weatherMode === 'heavy_rain'
-                      ? 0.24
-                      : isCyclone
-                      ? 0.25
-                      : 0.18;
+              {/* Gentle Falling Rain Streaks (rendered strictly during rain/monsoon modes, NO lines for cyclone) */}
+              {weatherMode !== 'cyclone' && (
+                <g className="subtle-rain-streaks" pointerEvents="none">
+                  {Array.from({
+                    length:
+                      weatherMode === 'monsoon'
+                        ? 110
+                        : weatherMode === 'heavy_rain'
+                        ? 75
+                        : 40
+                  }).map((_, i) => {
+                    const x = ((i * 73 + 37) % 760) + 70;
+                    const y = ((i * 97 + 19) % 980) + 70;
+                    const dx = -3;
+                    const dy = weatherMode === 'monsoon' ? 18 : weatherMode === 'heavy_rain' ? 14 : 9;
+                    const op =
+                      weatherMode === 'monsoon'
+                        ? 0.28
+                        : weatherMode === 'heavy_rain'
+                        ? 0.24
+                        : 0.18;
 
-                  return (
-                    <line
-                      key={`subtle-rain-drop-${i}`}
-                      x1={x}
-                      y1={y}
-                      x2={x + dx}
-                      y2={y + dy}
-                      stroke="#7dd3fc"
-                      strokeWidth={weatherMode === 'monsoon' ? 1.4 : weatherMode === 'heavy_rain' ? 1.2 : 1.0}
-                      strokeOpacity={op}
-                      strokeLinecap="round"
-                    />
-                  );
-                })}
-              </g>
+                    return (
+                      <line
+                        key={`subtle-rain-drop-${i}`}
+                        x1={x}
+                        y1={y}
+                        x2={x + dx}
+                        y2={y + dy}
+                        stroke="#7dd3fc"
+                        strokeWidth={weatherMode === 'monsoon' ? 1.4 : weatherMode === 'heavy_rain' ? 1.2 : 1.0}
+                        strokeOpacity={op}
+                        strokeLinecap="round"
+                      />
+                    );
+                  })}
+                </g>
+              )}
 
               {/* Very slight water surface micro-ripples on river mouths & water bodies */}
               <g className="subtle-water-ripples" pointerEvents="none">
@@ -696,16 +616,18 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                         onSelectDistrict(city);
                       }}
                     >
-                      {/* IF DISTRICT IS AT RISK: RENDER EXCLAMATION BADGE (WITH LITTLE WATER CIRCLE IN HEAVY RAIN) */}
+                      {/* IF DISTRICT IS AT RISK: RENDER EXCLAMATION BADGE */}
                       {isAtRisk ? (
                         (() => {
                           const isHeavyRain = weatherMode === 'heavy_rain';
+                          const isCyclone = weatherMode === 'cyclone';
+                          const isBarishalFlooded = isCyclone && city.id === 'barishal' && cycloneCategory >= 4;
+
                           return (
                             <g transform={`translate(${coords.x}, ${coords.y})`}>
                               {/* Little water circle around exclamations predicted to flood in heavy rain */}
                               {isHeavyRain ? (
                                 <>
-                                  {/* Outer water ripple circle */}
                                   <circle
                                     cx="0"
                                     cy="0"
@@ -716,7 +638,6 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                                     strokeDasharray="4 3"
                                     opacity={0.8}
                                   />
-                                  {/* Mid water puddle circle */}
                                   <circle
                                     cx="0"
                                     cy="0"
@@ -726,7 +647,6 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                                     stroke="#38bdf8"
                                     strokeWidth={1.6}
                                   />
-                                  {/* Inner water pool */}
                                   <circle
                                     cx="0"
                                     cy="0"
@@ -735,6 +655,24 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                                     fillOpacity={0.32}
                                     stroke="#7dd3fc"
                                     strokeWidth={1.2}
+                                  />
+                                </>
+                              ) : isCyclone ? (
+                                <>
+                                  {/* Researched Cyclone Warning Beacon Halo */}
+                                  <circle
+                                    cx="0"
+                                    cy="0"
+                                    r={18}
+                                    fill="#ef4444"
+                                    opacity="0.32"
+                                  />
+                                  <circle
+                                    cx="0"
+                                    cy="0"
+                                    r={14}
+                                    fill="#b91c1c"
+                                    opacity="0.2"
                                   />
                                 </>
                               ) : (
@@ -747,21 +685,22 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                                 />
                               )}
 
+                              {/* Alert Circle Badge */}
                               <circle
                                 cx="0"
                                 cy="0"
-                                r={isHeavyRain ? 9.5 : 11}
-                                fill={isHeavyRain ? '#e11d48' : '#dc2626'}
+                                r={isHeavyRain ? 9.5 : isCyclone ? 12 : 11}
+                                fill={isHeavyRain ? '#e11d48' : isBarishalFlooded ? '#991b1b' : '#dc2626'}
                                 stroke="#ffffff"
-                                strokeWidth="1.8"
+                                strokeWidth={isCyclone ? 2 : 1.8}
                               />
                               {/* Exclamation Mark Text */}
                               <text
                                 x="0"
-                                y="3.5"
+                                y="4"
                                 textAnchor="middle"
                                 fill="#ffffff"
-                                fontSize="10"
+                                fontSize={isCyclone ? "11.5" : "10"}
                                 fontWeight="900"
                                 fontFamily="sans-serif"
                               >
@@ -773,11 +712,19 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                                 <rect
                                   x="-2"
                                   y="-10"
-                                  width={isHeavyRain ? city.name.length * 5.8 + 62 : city.name.length * 6.2 + 20}
+                                  width={
+                                    isBarishalFlooded
+                                      ? 118
+                                      : isCyclone
+                                      ? city.name.length * 6.0 + 38
+                                      : isHeavyRain
+                                      ? city.name.length * 5.8 + 62
+                                      : city.name.length * 6.2 + 20
+                                  }
                                   height="13"
                                   rx="3"
-                                  fill={isHeavyRain ? '#0369a1' : '#991b1b'}
-                                  fillOpacity={0.94}
+                                  fill={isHeavyRain ? '#0369a1' : isBarishalFlooded ? '#7f1d1d' : '#991b1b'}
+                                  fillOpacity={0.96}
                                   stroke={isHeavyRain ? '#7dd3fc' : '#fca5a5'}
                                   strokeWidth="0.8"
                                 />
@@ -789,48 +736,66 @@ export const BangladeshRainfallMap: React.FC<BangladeshRainfallMapProps> = ({
                                   fontWeight="bold"
                                   fontFamily="sans-serif"
                                 >
-                                  {isHeavyRain ? `⚠️ ${city.name} (Predicted)` : `⚠️ ${city.name}`}
+                                  {isBarishalFlooded
+                                    ? `⚠️ Barishal (Inundated: 4m MSL)`
+                                    : isCyclone
+                                    ? `⚠️ ${city.name} (! Surge Alert)`
+                                    : isHeavyRain
+                                    ? `⚠️ ${city.name} (Predicted)`
+                                    : `⚠️ ${city.name}`}
                                 </text>
                               </g>
                             </g>
                           );
                         })()
                       ) : (
-                        /* Standard clean district pin */
-                        <g transform={`translate(${coords.x}, ${coords.y})`}>
-                          <circle
-                            cx="0"
-                            cy="0"
-                            r={city.isDivisionCapital ? 4.5 : 3.2}
-                            fill={city.isDivisionCapital ? '#0369a1' : '#475569'}
-                            stroke="#ffffff"
-                            strokeWidth={isSelected ? 2 : 1.2}
-                          />
-                          {/* District Label */}
-                          <g transform="translate(6, 3)">
-                            <rect
-                              x="-1"
-                              y="-9"
-                              width={city.name.length * 5.4 + 14}
-                              height="11"
-                              rx="2.5"
-                              fill="#ffffff"
-                              fillOpacity={0.88}
-                              stroke="#cbd5e1"
-                              strokeWidth="0.5"
-                            />
-                            <text
-                              x="2"
-                              y="-1"
-                              fill="#0f172a"
-                              fontSize="6.5"
-                              fontWeight={city.isDivisionCapital ? 'bold' : 'normal'}
-                              fontFamily="sans-serif"
-                            >
-                              {city.name}
-                            </text>
-                          </g>
-                        </g>
+                        /* Standard clean district pin (with special researched safe indicator for Barishal at Cat 1-3) */
+                        (() => {
+                          const isBarishalSafeInCyclone = weatherMode === 'cyclone' && city.id === 'barishal';
+
+                          return (
+                            <g transform={`translate(${coords.x}, ${coords.y})`}>
+                              <circle
+                                cx="0"
+                                cy="0"
+                                r={isBarishalSafeInCyclone ? 6 : city.isDivisionCapital ? 4.5 : 3.2}
+                                fill={isBarishalSafeInCyclone ? '#16a34a' : city.isDivisionCapital ? '#0369a1' : '#475569'}
+                                stroke="#ffffff"
+                                strokeWidth={isBarishalSafeInCyclone ? 2 : isSelected ? 2 : 1.2}
+                              />
+                              {/* District Label */}
+                              <g transform="translate(6, 3)">
+                                <rect
+                                  x="-1"
+                                  y="-9"
+                                  width={
+                                    isBarishalSafeInCyclone
+                                      ? 112
+                                      : city.name.length * 5.4 + 14
+                                  }
+                                  height="11"
+                                  rx="2.5"
+                                  fill={isBarishalSafeInCyclone ? '#f0fdf4' : '#ffffff'}
+                                  fillOpacity={0.92}
+                                  stroke={isBarishalSafeInCyclone ? '#86efac' : '#cbd5e1'}
+                                  strokeWidth={isBarishalSafeInCyclone ? 0.8 : 0.5}
+                                />
+                                <text
+                                  x="2"
+                                  y="-1"
+                                  fill={isBarishalSafeInCyclone ? '#15803d' : '#0f172a'}
+                                  fontSize="6.5"
+                                  fontWeight={isBarishalSafeInCyclone || city.isDivisionCapital ? 'bold' : 'normal'}
+                                  fontFamily="sans-serif"
+                                >
+                                  {isBarishalSafeInCyclone
+                                    ? `✅ Barishal (Safe: 4.0m MSL)`
+                                    : city.name}
+                                </text>
+                              </g>
+                            </g>
+                          );
+                        })()
                       )}
                     </g>
                   );

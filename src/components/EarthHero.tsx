@@ -21,17 +21,17 @@ export const EarthHero: React.FC<EarthHeroProps> = ({
           src={earthDaylightImg}
           alt="Lively daylight view of Planet Earth"
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-center scale-105"
+          className="w-full h-full object-cover object-center"
         />
         {/* Measured bright day overlay scrim - ensuring lively non-dark look */}
         <div className="absolute inset-0 bg-gradient-to-b from-sky-400/35 via-white/20 to-sky-100/70 backdrop-blur-[1px]" />
       </div>
 
-      {/* Floating Decorative Elements */}
-      <div className="absolute top-10 left-10 hidden lg:block animate-float">
+      {/* Decorative Elements (Static & Clean, No Screen Animation) */}
+      <div className="absolute top-10 left-10 hidden lg:block">
         <div className="bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-3xl border-3 border-sky-300 shadow-lg flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-600">
-            <Waves className="w-6 h-6 animate-pulse" />
+            <Waves className="w-6 h-6" />
           </div>
           <div>
             <div className="font-fun font-bold text-xs text-sky-900">3D Terrain Topography</div>
@@ -40,7 +40,7 @@ export const EarthHero: React.FC<EarthHeroProps> = ({
         </div>
       </div>
 
-      <div className="absolute bottom-16 right-10 hidden lg:block animate-float" style={{ animationDelay: '2s' }}>
+      <div className="absolute bottom-16 right-10 hidden lg:block">
         <div className="bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-3xl border-3 border-amber-300 shadow-lg flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600">
             <CloudRain className="w-6 h-6" />
@@ -54,8 +54,8 @@ export const EarthHero: React.FC<EarthHeroProps> = ({
 
       {/* Center Hero Card */}
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 text-center flex flex-col items-center">
-        {/* Animated Badge */}
-        <div className="inline-flex items-center gap-2 bg-white/95 px-4 py-1.5 rounded-full shadow-md border-2 border-sky-300 text-sky-800 text-xs font-bold mb-5 animate-bounce">
+        {/* Static Clean Badge */}
+        <div className="inline-flex items-center gap-2 bg-white/95 px-4 py-1.5 rounded-full shadow-md border-2 border-sky-300 text-sky-800 text-xs font-bold mb-5">
           <Sparkles className="w-4 h-4 text-sky-500" />
           <span>Planetary Flood & Topography Visualizer</span>
         </div>
@@ -74,20 +74,20 @@ export const EarthHero: React.FC<EarthHeroProps> = ({
         <div className="mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
           <button
             onClick={onStartSimulation}
-            className="btn-cartoon-primary w-full sm:w-auto px-6 py-3.5 rounded-3xl text-white font-fun font-bold text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl group cursor-pointer"
+            className="btn-cartoon-primary w-full sm:w-auto px-6 py-3.5 rounded-3xl text-white font-fun font-bold text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl cursor-pointer"
           >
-            <Waves className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            <Waves className="w-5 h-5" />
             <span>🌊 Sea Level Flooder</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4" />
           </button>
 
           <button
             onClick={onStartRainfallSimulation}
-            className="w-full sm:w-auto px-6 py-3.5 rounded-3xl text-white font-fun font-bold text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 border-2 border-indigo-300 group cursor-pointer transition-all hover:scale-102"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-3xl text-white font-fun font-bold text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 border-2 border-indigo-300 cursor-pointer"
           >
-            <CloudRain className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            <CloudRain className="w-5 h-5" />
             <span>🌧️ Rainfall & Cyclones</span>
-            <Sparkles className="w-4 h-4 text-amber-300 group-hover:scale-125 transition-transform" />
+            <Sparkles className="w-4 h-4 text-amber-300" />
           </button>
 
           <button
