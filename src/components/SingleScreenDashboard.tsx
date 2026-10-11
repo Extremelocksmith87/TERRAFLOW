@@ -10,6 +10,7 @@ import {
 import {
   Waves,
   Snowflake,
+  Factory,
   Users,
   CloudRain,
   History,
@@ -74,6 +75,11 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
   const [iceMeltText, setIceMeltText] = useState<string>(iceMeltPercent.toString());
   const [isIceMeltFocused, setIsIceMeltFocused] = useState<boolean>(false);
 
+  // Cumulative CO2 Emissions: 366.4 Gt CO2 melts 1% polar ice (Max 36,640 Gt = 100% melt)
+  const co2Gigatons = Number((iceMeltPercent * 366.4).toFixed(1));
+  const [co2Text, setCo2Text] = useState<string>(co2Gigatons.toString());
+  const [isCo2Focused, setIsCo2Focused] = useState<boolean>(false);
+
   const [displacedText, setDisplacedText] = useState<string>(
     displacedPopulation === 0 ? '0' : (displacedPopulation / 1000000).toFixed(1)
   );
@@ -91,6 +97,12 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
       setIceMeltText(iceMeltPercent.toString());
     }
   }, [iceMeltPercent, isIceMeltFocused]);
+
+  useEffect(() => {
+    if (!isCo2Focused) {
+      setCo2Text(co2Gigatons.toString());
+    }
+  }, [co2Gigatons, isCo2Focused]);
 
   useEffect(() => {
     if (!isDisplacedFocused) {
@@ -246,6 +258,47 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
       const clamped = Math.min(100, parsed);
       onIceMeltChange(clamped);
       setIceMeltText(clamped.toString());
+    }
+  };
+
+  // Handlers for Cumulative CO2 Emissions (Max 36,640 Gt CO2)
+  // 366.4 Gt melts 1% polar ice
+  const handleCo2Slider = (gtVal: number) => {
+    const clampedCo2 = Math.max(0, Math.min(36640, gtVal));
+    const newIceMelt = Number((clampedCo2 / 366.4).toFixed(2));
+    onIceMeltChange(newIceMelt);
+    if (newIceMelt === 0) {
+      onSeaLevelChange(0);
+    } else {
+      onSeaLevelChange(Number(((newIceMelt / 100) * 66).toFixed(1)));
+    }
+  };
+
+  const handleCo2InputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawStr = e.target.value;
+    setCo2Text(rawStr);
+    const parsed = parseFloat(rawStr);
+    if (!isNaN(parsed) && parsed >= 0) {
+      const clamped = Math.min(36640, parsed);
+      const newIceMelt = Number((clamped / 366.4).toFixed(2));
+      onIceMeltChange(newIceMelt);
+      if (newIceMelt === 0) {
+        onSeaLevelChange(0);
+      } else {
+        onSeaLevelChange(Number(((newIceMelt / 100) * 66).toFixed(1)));
+      }
+    }
+  };
+
+  const handleCo2InputBlur = () => {
+    setIsCo2Focused(false);
+    const parsed = parseFloat(co2Text);
+    if (isNaN(parsed) || parsed < 0) {
+      setCo2Text(co2Gigatons.toString());
+    } else {
+      const clamped = Math.max(0, Math.min(36640, parsed));
+      handleCo2Slider(clamped);
+      setCo2Text(clamped.toString());
     }
   };
 
@@ -530,7 +583,59 @@ export const SingleScreenDashboard: React.FC<SingleScreenDashboardProps> = ({
             </div>
           </div>
 
-          {/* SLIDER 3: DISPLACED POPULATION SLIDER (Real Numbers & Typable) */}
+          {/* SLIDER 3: CUMULATIVE CO2 EMISSIONS (0 - 36,640 Gt CO2) */}
+          <div className="bg-orange-50/90 rounded-2xl p-3 border-2 border-orange-200 shadow-xs">
+            <div className="flex justify-between items-center mb-1.5 gap-2">
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1 shrink-0">
+                <Factory className="w-3.5 h-3.5 text-orange-600" />
+                CO₂ Emissions
+              </span>
+              <span className="text-[9.5px] font-bold text-orange-700 bg-orange-100/90 px-1.5 py-0.5 rounded-md font-mono hidden sm:inline-block">
+                366.4 Gt = 1% Melt
+              </span>
+              {/* Typable Input Box */}
+              <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-xl border border-orange-300 shadow-xs focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-orange-400 transition-all">
+                <input
+                  type="number"
+                  min="0"
+                  max="36640"
+                  step="any"
+                  value={co2Text}
+                  onFocus={() => setIsCo2Focused(true)}
+                  onChange={handleCo2InputChange}
+                  onBlur={handleCo2InputBlur}
+                  onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                  className="w-16 font-mono text-xs font-bold text-orange-950 bg-transparent text-right outline-hidden"
+                  title="Type exact cumulative CO2 in Gigatons (Gt)"
+                  placeholder="0"
+                />
+                <span className="text-xs font-bold text-orange-700 select-none">Gt</span>
+              </div>
+            </div>
+
+            {/* Direct Real-Number Slider (0 to 36,640 Gt) */}
+            <input
+              type="range"
+              min="0"
+              max="36640"
+              step="36.64"
+              value={co2Gigatons}
+              onChange={(e) => handleCo2Slider(parseFloat(e.target.value))}
+              className="w-full h-2.5 bg-orange-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+            />
+            <div className="flex justify-between text-[9px] text-slate-500 font-mono mt-1 select-none">
+              <span>0 Gt</span>
+              <span>3,664 Gt (10%)</span>
+              <span>18,320 Gt (50%)</span>
+              <span>36,640 Gt (100%)</span>
+            </div>
+            <div className="text-[9px] text-orange-700 font-medium flex items-center justify-between mt-0.5">
+              <span>366.4 Gt melts 1% ice · Max 36,640 Gt = 100% melt</span>
+              <span className="italic text-slate-400">Click box to type</span>
+            </div>
+          </div>
+
+          {/* SLIDER 4: DISPLACED POPULATION SLIDER (Real Numbers & Typable) */}
           <div className="bg-amber-50 rounded-2xl p-3 border-2 border-amber-200 shadow-xs">
             <div className="flex justify-between items-center mb-1.5 gap-2">
               <span className="text-xs font-bold text-slate-800 flex items-center gap-1 shrink-0">

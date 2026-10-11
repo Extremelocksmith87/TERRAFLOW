@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CountryFloodData } from '../types/flood';
-import { Waves, Snowflake, CloudRain, Sun, CloudDrizzle, CloudLightning, Play, Pause, RotateCcw, Users, Info } from 'lucide-react';
+import { Waves, Snowflake, Factory, CloudRain, Sun, CloudDrizzle, CloudLightning, Play, Pause, RotateCcw, Users, Info } from 'lucide-react';
 import {
   EXP_SLIDER_STEPS,
   valueToExponentialSlider,
@@ -45,6 +45,10 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   const [iceMeltText, setIceMeltText] = useState(iceMeltPercent.toString());
   const [isIceMeltFocused, setIsIceMeltFocused] = useState(false);
 
+  const co2Gigatons = Number((iceMeltPercent * 366.4).toFixed(1));
+  const [co2Text, setCo2Text] = useState(co2Gigatons.toString());
+  const [isCo2Focused, setIsCo2Focused] = useState(false);
+
   const [displacedText, setDisplacedText] = useState(
     displacedPopulation === 0 ? '0' : (displacedPopulation / 1000000).toFixed(1)
   );
@@ -57,6 +61,10 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   useEffect(() => {
     if (!isIceMeltFocused) setIceMeltText(iceMeltPercent.toString());
   }, [iceMeltPercent, isIceMeltFocused]);
+
+  useEffect(() => {
+    if (!isCo2Focused) setCo2Text(co2Gigatons.toString());
+  }, [co2Gigatons, isCo2Focused]);
 
   useEffect(() => {
     if (!isDisplacedFocused) {
@@ -318,13 +326,85 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
             />
           </div>
 
-          <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
+            <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
             <span>0%</span>
             <span>1%</span>
             <span>5%</span>
             <span>25%</span>
             <span>50%</span>
             <span>100% (+66m)</span>
+          </div>
+        </div>
+
+        {/* Slider: Cumulative CO2 Emissions (0 to 36,640 Gt CO2) */}
+        <div className="bg-orange-50/80 rounded-2xl p-4 border-2 border-orange-200 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <label className="font-fun font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
+              <span className="p-1 rounded-xl bg-orange-200 text-orange-800">
+                <Factory className="w-3.5 h-3.5" />
+              </span>
+              CO₂ Emissions
+            </label>
+            <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-xl border border-orange-300 shadow-xs focus-within:ring-2 focus-within:ring-orange-400">
+              <input
+                type="number"
+                min="0"
+                max="36640"
+                step="any"
+                value={co2Text}
+                onFocus={() => setIsCo2Focused(true)}
+                onChange={(e) => {
+                  setCo2Text(e.target.value);
+                  const parsed = parseFloat(e.target.value);
+                  if (!isNaN(parsed) && parsed >= 0) {
+                    const clamped = Math.min(36640, parsed);
+                    const pct = Number((clamped / 366.4).toFixed(2));
+                    onIceMeltChange(pct);
+                    onSeaLevelChange(Number(((pct / 100) * 66).toFixed(1)));
+                  }
+                }}
+                onBlur={() => {
+                  setIsCo2Focused(false);
+                  const parsed = parseFloat(co2Text);
+                  if (isNaN(parsed) || parsed < 0) {
+                    setCo2Text(co2Gigatons.toString());
+                  } else {
+                    const clamped = Math.max(0, Math.min(36640, parsed));
+                    const pct = Number((clamped / 366.4).toFixed(2));
+                    onIceMeltChange(pct);
+                    onSeaLevelChange(Number(((pct / 100) * 66).toFixed(1)));
+                    setCo2Text(clamped.toString());
+                  }
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                className="w-16 font-mono text-xs font-bold text-orange-950 bg-transparent text-right outline-hidden"
+              />
+              <span className="text-xs font-bold text-orange-700">Gt</span>
+            </div>
+          </div>
+
+          <div className="py-2">
+            <input
+              type="range"
+              min="0"
+              max="36640"
+              step="36.64"
+              value={co2Gigatons}
+              onChange={(e) => {
+                const gt = parseFloat(e.target.value);
+                const pct = Number((gt / 366.4).toFixed(2));
+                onIceMeltChange(pct);
+                onSeaLevelChange(Number(((pct / 100) * 66).toFixed(1)));
+              }}
+              className="w-full h-3 bg-orange-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+            />
+          </div>
+
+          <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
+            <span>0 Gt</span>
+            <span>3,664 Gt (10%)</span>
+            <span>18,320 Gt (50%)</span>
+            <span>36,640 Gt (100%)</span>
           </div>
         </div>
 

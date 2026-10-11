@@ -297,30 +297,82 @@ export const COASTAL_CYCLONE_SURGE_DISTRICTS = [
   'chattogram', 'coxsbazar'
 ];
 
-export const EASTERN_HILL_TRACTS = ['khagrachhari', 'rangamati', 'bandarban', 'coxsbazar'];
+// Western Bangladesh frontier districts (West Bengal border, Barind Tract, Padma/Ganges basin, Gorai basin, Southwest delta)
+export const WESTERN_CORE_EPICENTER = [
+  'chapainawabganj', 'rajshahi', 'kushtia', 'meherpur', 'chuadanga',
+  'jhenaidah', 'jashore', 'satkhira', 'naogaon', 'natore', 'dinajpur', 'pabna'
+];
 
-// Mountainous and steep foothill districts with high vulnerability to intense downpours,
-// mountain torrents (Pahari Dhol), valley flash floods, and landslides/mudslides
-export const MOUNTAINOUS_DOWNPOUR_DISTRICTS = [
-  'bandarban',
-  'rangamati',
-  'khagrachhari',
-  'coxsbazar',
-  'chattogram',
-  'sylhet',
-  'moulvibazar',
-  'habiganj',
-  'sunamganj',
-  'netrokona',
-  'sherpur'
+export const WESTERN_BANGLADESH_DISTRICTS = [
+  'chapainawabganj', 'rajshahi', 'naogaon', 'natore', 'pabna', 'joypurhat', 'bogura',
+  'kushtia', 'meherpur', 'chuadanga', 'jhenaidah', 'jashore', 'magura', 'satkhira',
+  'khulna', 'narail', 'bagerhat', 'dinajpur', 'thakurgaon', 'panchagarh', 'nilphamari',
+  'sirajganj', 'rajbari'
 ];
 
 /**
+ * Calculates district-specific rainfall (mm/day) based on geographic longitude (West vs East).
+ * USER SPECIFICATION: "The heavy rain and monsoon should affect WAYYYY MORE in the west of bangladesh"
+ * Western districts receive 2.0x - 2.5x heavier downpour intensity than baseline, while eastern districts receive far less.
+ */
+export function getDistrictRainfallData(
+  _districtId: string,
+  cityXPercent: number, // 0% = extreme West, 100% = extreme East
+  mode: WeatherMode,
+  baseRainMm: number
+) {
+  const isWest = cityXPercent <= 44.0;
+  const isExtremeWest = cityXPercent <= 33.0;
+
+  let multiplier = 1.0;
+  if (mode === 'heavy_rain') {
+    if (isExtremeWest) {
+      // Extreme West (Rajshahi, Chapai Nawabganj, Kushtia, Meherpur, Chuadanga, Satkhira): 2.0x - 2.5x base!
+      multiplier = 2.4 - (cityXPercent / 33.0) * 0.4;
+    } else if (isWest) {
+      // West Plain: 1.6x - 1.95x
+      multiplier = 1.95 - ((cityXPercent - 33.0) / 11.0) * 0.35;
+    } else {
+      // East (Sylhet, Chattogram, Dhaka): significantly lower rain (0.35x - 0.7x)
+      multiplier = Math.max(0.35, 0.7 - ((cityXPercent - 44.0) / 56.0) * 0.35);
+    }
+  } else if (mode === 'monsoon') {
+    if (isExtremeWest) {
+      // Extreme West transboundary monsoon deluge: 1.9x - 2.3x
+      multiplier = 2.25 - (cityXPercent / 33.0) * 0.35;
+    } else if (isWest) {
+      multiplier = 1.85 - ((cityXPercent - 33.0) / 11.0) * 0.3;
+    } else {
+      multiplier = Math.max(0.5, 0.85 - ((cityXPercent - 44.0) / 56.0) * 0.35);
+    }
+  } else if (mode === 'light_rain') {
+    multiplier = isWest ? 1.25 : 0.85;
+  }
+
+  const districtMm = Math.round(baseRainMm * multiplier);
+
+  return {
+    districtMm,
+    isWest,
+    isExtremeWest,
+    multiplier: Number(multiplier.toFixed(2)),
+    statusLabel:
+      mode === 'heavy_rain' && isWest
+        ? 'Torrential Western Core Downpour'
+        : mode === 'monsoon' && isWest
+        ? 'Severe Western Deluge & River Crest'
+        : isWest
+        ? 'Western Sector Rain'
+        : 'Moderate / Light Regional Rain'
+  };
+}
+
+/**
  * Scientifically calibrated flood calculation based on BMD, FFWC, and IWM hydrological records.
- * - Light rain (10–40mm): 0% flooding, 0 districts. Normal absorption.
- * - Heavy rain (44–200mm): Mountainous downpours trigger flash floods & landslide risk (1.8% - 8.5% area).
- * - Monsoon deluge (150–600mm): Major river confluence inundation (18% normal to 65% extreme).
- * - Cyclone (Cat 1–5): Coastal storm surges confined to southern Bay of Bengal coast (2.5% - 20% area).
+ * USER REQUIREMENT:
+ * - "The heavy rain and monsoon should affect WAYYYY MORE in the west of bangladesh"
+ * - In Monsoon: Western districts along the Padma (Ganges), Gorai, Mahananda, and southwest delta are the PRIMARY at-risk epicenters.
+ * - In Rain mode: Safe natural drainage (0% flood area/surge), with torrential precipitation concentrated in the West.
  */
 export function calculateWeatherFloodImpact(
   mode: WeatherMode,
@@ -342,80 +394,55 @@ export function calculateWeatherFloodImpact(
     floodedPercent = 0.0;
     // atRiskDistricts and floodedZones remain strictly empty!
   } else if (mode === 'heavy_rain') {
-    // Heavy rain: 44 - 200 mm/day (BMD standard: Heavy 44-88mm, Very Heavy >88mm)
-    // No massive regional river submersion (floodedZones remains empty), but steep mountainous
-    // catchments and low-lying haor depressions face localized flash flood torrents ("Pahari Dhol")
-    // marked with careful exclamation alerts and localized water accumulation circles.
-    if (rainMagnitudeMm <= 70) {
-      dangerLevel = 'Moderate';
-      equivalentSurgeMeters = 0.4;
-      floodedPercent = 1.2;
-      [
-        'sunamganj', 'sylhet', 'netrokona', 'bandarban', 'rangamati', 'coxsbazar'
-      ].forEach((id) => atRiskDistricts.add(id));
-    } else if (rainMagnitudeMm <= 120) {
-      dangerLevel = 'Severe';
-      equivalentSurgeMeters = 0.8;
-      floodedPercent = 2.4;
-      [
-        'sunamganj', 'sylhet', 'netrokona', 'moulvibazar', 'habiganj',
-        'bandarban', 'rangamati', 'khagrachhari', 'coxsbazar', 'chattogram',
-        'kurigram', 'sherpur'
-      ].forEach((id) => atRiskDistricts.add(id));
-    } else {
-      dangerLevel = 'Catastrophic';
-      equivalentSurgeMeters = 1.4;
-      floodedPercent = 4.2;
-      [
-        'sunamganj', 'sylhet', 'netrokona', 'moulvibazar', 'habiganj',
-        'bandarban', 'rangamati', 'khagrachhari', 'coxsbazar', 'chattogram',
-        'kurigram', 'gaibandha', 'lalmonirhat', 'sherpur', 'feni',
-        'sirajganj', 'bogura'
-      ].forEach((id) => atRiskDistricts.add(id));
-    }
+    // Heavy rain mode: USER SPECIFICATION: REMOVE ALL FLOOD FROM RAIN MODE
+    // Precipitation is drained and absorbed naturally. Zero riverine flood, zero coastal surge, zero flood area.
+    dangerLevel = 'Low';
+    equivalentSurgeMeters = 0;
+    floodedPercent = 0.0;
+    // atRiskDistricts and floodedZones remain strictly empty! (Zero flood in rain mode)
   } else if (mode === 'monsoon') {
-    // Monsoon Deluge: 150 - 600 mm accumulated precipitation + transboundary river confluence
-    // FFWC standard: Normal monsoon ~20-22%, High ~35%, Extreme (1988/1998) 60-68%
+    // Monsoon Deluge: USER SPECIFICATION: "affect WAYYYY MORE in the west of bangladesh"
+    // Western transboundary river systems (Padma/Ganges, Gorai, Mahananda, Kobadak) and western frontier
+    // bear the brunt of the deluge!
     if (rainMagnitudeMm <= 250) {
-      // Moderate early monsoon
+      // Moderate early monsoon: WESTERN CORE DISTRICTS flood first!
       dangerLevel = 'Moderate';
-      equivalentSurgeMeters = 1.2;
-      HAOR_BASIN_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      ['kurigram', 'gaibandha', 'sirajganj', 'jamalpur'].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = Number((16 + ((rainMagnitudeMm - 150) / 100) * 6).toFixed(1)); // 16% - 22%
+      equivalentSurgeMeters = 1.4;
+      WESTERN_CORE_EPICENTER.forEach((id) => atRiskDistricts.add(id));
+      ['bogura', 'sirajganj', 'rajbari'].forEach((id) => atRiskDistricts.add(id));
+      floodedPercent = Number((18 + ((rainMagnitudeMm - 150) / 100) * 8).toFixed(1)); // 18% - 26%
     } else if (rainMagnitudeMm <= 380) {
-      // Peak seasonal monsoon
+      // Peak seasonal monsoon: ALL WESTERN BANGLADESH DISTRICTS heavily at-risk!
       dangerLevel = 'Severe';
-      equivalentSurgeMeters = 1.8;
-      floodedZones.add('0-3'); // low coastal shelf & lowest depression beds
-      HAOR_BASIN_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      NORTHERN_TISTA_JAMUNA_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      ['faridpur', 'madaripur', 'shariatpur', 'chandpur', 'munshiganj'].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = Number((23 + ((rainMagnitudeMm - 250) / 130) * 12).toFixed(1)); // 23% - 35%
-    } else if (rainMagnitudeMm <= 480) {
-      // High monsoon deluge (approaching 1988 scale)
-      dangerLevel = 'Catastrophic';
-      equivalentSurgeMeters = 2.4;
-      floodedZones.add('0-3');
-      HAOR_BASIN_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      NORTHERN_TISTA_JAMUNA_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      CENTRAL_CONFLUENCE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      ['barishal', 'pirojpur', 'jhalokathi', 'chandpur', 'cumilla', 'brahmanbaria', 'feni'].forEach((id) =>
+      equivalentSurgeMeters = 2.0;
+      floodedZones.add('0-3'); // low delta shelf & western river channels
+      WESTERN_BANGLADESH_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
+      ['faridpur', 'madaripur', 'gopalganj', 'barishal', 'pirojpur', 'barguna'].forEach((id) =>
         atRiskDistricts.add(id)
       );
-      floodedPercent = Number((36 + ((rainMagnitudeMm - 380) / 100) * 16).toFixed(1)); // 36% - 52%
-    } else {
-      // Historic 100-year super-monsoon deluge (1998 record deluge scale)
+      floodedPercent = Number((27 + ((rainMagnitudeMm - 250) / 130) * 14).toFixed(1)); // 27% - 41%
+    } else if (rainMagnitudeMm <= 480) {
+      // High monsoon deluge: Massive western inundation + central confluence
       dangerLevel = 'Catastrophic';
-      equivalentSurgeMeters = 3.2;
+      equivalentSurgeMeters = 2.8;
+      floodedZones.add('0-3');
+      WESTERN_BANGLADESH_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
+      CENTRAL_CONFLUENCE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
+      ['barishal', 'pirojpur', 'jhalokathi', 'barguna', 'patuakhali', 'chandpur'].forEach((id) =>
+        atRiskDistricts.add(id)
+      );
+      floodedPercent = Number((42 + ((rainMagnitudeMm - 380) / 100) * 16).toFixed(1)); // 42% - 58%
+    } else {
+      // Historic 100-year super-deluge: Catastrophic inundation across western corridor and floodplains
+      dangerLevel = 'Catastrophic';
+      equivalentSurgeMeters = 3.6;
       floodedZones.add('0-3');
       floodedZones.add('3-10');
-      HAOR_BASIN_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      NORTHERN_TISTA_JAMUNA_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
+      WESTERN_BANGLADESH_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
       CENTRAL_CONFLUENCE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
       COASTAL_CYCLONE_SURGE_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
-      ['tangail', 'rajbari', 'magura', 'narail'].forEach((id) => atRiskDistricts.add(id));
-      floodedPercent = Number(Math.min(68, 53 + ((rainMagnitudeMm - 480) / 120) * 15).toFixed(1)); // 53% - 68%
+      HAOR_BASIN_DISTRICTS.forEach((id) => atRiskDistricts.add(id));
+      floodedPercent = Number(Math.min(68, 56 + ((rainMagnitudeMm - 480) / 120) * 12).toFixed(1)); // 56% - 68%
     }
   } else if (mode === 'cyclone') {
     // Tropical Cyclone: Category 1 to 5 Bay of Bengal storm surge

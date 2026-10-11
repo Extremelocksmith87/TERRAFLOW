@@ -118,6 +118,19 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
 
   // Calculate hydrological flood impact
   const floodImpact = useMemo(() => {
+    // USER SPECIFICATION: REMOVE ALL FLOOD FROM RAIN MODE (light_rain & heavy_rain)
+    if (weatherMode === 'light_rain' || weatherMode === 'heavy_rain') {
+      return {
+        atRiskDistrictIds: [],
+        floodedZoneIds: [],
+        equivalentSurgeMeters: 0,
+        dangerLevel: 'Low' as const,
+        floodedPercent: 0.0,
+        estimatedFloodedAreaKm2: 0,
+        estimatedAffectedPop: 0
+      };
+    }
+
     // If a historical event is active, prioritize its verified data
     if (selectedHistoricalEvent) {
       const surge = selectedHistoricalEvent.surgeMeters;
@@ -522,7 +535,7 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
                   <div>
                     <span className="font-bold text-sky-900 block mb-0.5">
                       {weatherMode === 'light_rain' && 'BMD Official Standard: Light Rain (<10–40 mm/day)'}
-                      {weatherMode === 'heavy_rain' && 'BMD Standard: Heavy Downpour & Mountain Torrent Risk (44–200 mm/day)'}
+                      {weatherMode === 'heavy_rain' && 'BMD Standard: Heavy Downpour (44–200 mm/day)'}
                       {weatherMode === 'monsoon' && 'FFWC & BWDB Standard: Seasonal Monsoon Confluence (150–600 mm)'}
                       {weatherMode === 'cyclone' && 'IWM & BMD Standard: Bay of Bengal Storm Surge (Cat 1–5)'}
                     </span>
@@ -530,7 +543,7 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
                       {weatherMode === 'light_rain' &&
                         'Regular daily precipitation is 100% absorbed by soils, agricultural fields, and natural drainage. Causes 0% riverine flood and 0% coastal surge.'}
                       {weatherMode === 'heavy_rain' &&
-                        'Heavy downpours cause drainage waterlogging across all 64 districts nationwide, while steep mountainous regions (Chittagong Hill Tracts and Meghalaya/Assam foothills) face severe flash flood torrents ("Pahari Dhol") and mudslides.'}
+                        'Precipitation is managed through soil infiltration, natural drainage channels, and river networks. Causes 0% riverine flood and 0% coastal surge.'}
                       {weatherMode === 'monsoon' &&
                         'Driven by simultaneous cresting of the Brahmaputra, Ganges, and Meghna rivers (catchments 12x Bangladesh’s size). Floodplains naturally flood 20–22%; historic deluges (1998) reached 68%.'}
                       {weatherMode === 'cyclone' &&
@@ -728,12 +741,20 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-                    Simulated Inundation Impact:
+                    {weatherMode === 'heavy_rain' || weatherMode === 'light_rain' ? (
+                      <CloudRain className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                    )}
+                    {weatherMode === 'heavy_rain' || weatherMode === 'light_rain'
+                      ? 'Precipitation Absorption (Zero Flood):'
+                      : 'Simulated Inundation Impact:'}
                   </span>
                   <span
                     className={`font-bold px-2 py-0.5 rounded-full text-[10px] uppercase ${
-                      floodImpact.dangerLevel === 'Catastrophic'
+                      weatherMode === 'heavy_rain' || weatherMode === 'light_rain'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : floodImpact.dangerLevel === 'Catastrophic'
                         ? 'bg-rose-100 text-rose-800 border border-rose-300'
                         : floodImpact.dangerLevel === 'Severe'
                         ? 'bg-amber-100 text-amber-800 border border-amber-300'
@@ -742,15 +763,19 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
                         : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                     }`}
                   >
-                    {floodImpact.dangerLevel} Danger
+                    {weatherMode === 'heavy_rain' || weatherMode === 'light_rain'
+                      ? '0% Flood (Safe)'
+                      : `${floodImpact.dangerLevel} Danger`}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div className="bg-white p-2 rounded-xl border border-slate-200">
                     <span className="text-slate-400 block text-[9px] uppercase">Alert Districts</span>
-                    <span className="font-mono font-bold text-rose-600 text-sm">
-                      {floodImpact.atRiskDistrictIds.length}
+                    <span className="font-mono font-bold text-emerald-600 text-sm">
+                      {weatherMode === 'heavy_rain' || weatherMode === 'light_rain'
+                        ? 0
+                        : floodImpact.atRiskDistrictIds.length}
                     </span>
                     <span className="text-slate-500 text-[10px]"> / 64 Districts</span>
                   </div>
@@ -758,33 +783,35 @@ export const RainfallDashboard: React.FC<RainfallDashboardProps> = ({
                   <div className="bg-white p-2 rounded-xl border border-slate-200">
                     <span className="text-slate-400 block text-[9px] uppercase">Tidal / Runoff Depth</span>
                     <span className="font-mono font-bold text-sky-800 text-sm">
-                      +{floodImpact.equivalentSurgeMeters}m
+                      +{weatherMode === 'heavy_rain' || weatherMode === 'light_rain' ? 0 : floodImpact.equivalentSurgeMeters}m
                     </span>
                   </div>
 
                   <div className="bg-white p-2 rounded-xl border border-slate-200">
                     <span className="text-slate-400 block text-[9px] uppercase">Flooded Surface</span>
                     <span className="font-mono font-bold text-slate-800">
-                      {floodImpact.estimatedFloodedAreaKm2.toLocaleString()} km²
+                      {weatherMode === 'heavy_rain' || weatherMode === 'light_rain' ? '0' : floodImpact.estimatedFloodedAreaKm2.toLocaleString()} km²
                     </span>
-                    <span className="text-slate-500 text-[10px]"> ({floodImpact.floodedPercent}%)</span>
+                    <span className="text-slate-500 text-[10px]">
+                      {' '}({weatherMode === 'heavy_rain' || weatherMode === 'light_rain' ? 0 : floodImpact.floodedPercent}%)
+                    </span>
                   </div>
 
                   <div className="bg-white p-2 rounded-xl border border-slate-200">
                     <span className="text-slate-400 block text-[9px] uppercase">Vulnerable Citizens</span>
                     <span className="font-mono font-bold text-slate-800">
-                      {(floodImpact.estimatedAffectedPop / 1000000).toFixed(1)}M
+                      {weatherMode === 'heavy_rain' || weatherMode === 'light_rain' ? '0.0' : (floodImpact.estimatedAffectedPop / 1000000).toFixed(1)}M
                     </span>
                     <span className="text-slate-500 text-[10px]"> people</span>
                   </div>
                 </div>
 
-                {/* Mountain Downpour Focus Alert */}
-                {weatherMode === 'heavy_rain' && (
-                  <div className="bg-amber-50 border border-amber-300 p-2 rounded-xl text-[10px] text-amber-950 flex items-start gap-1.5 leading-snug">
-                    <span className="text-base shrink-0">🏔️</span>
+                {/* Zero Flood in Rain Mode Callout */}
+                {(weatherMode === 'heavy_rain' || weatherMode === 'light_rain') && (
+                  <div className="bg-emerald-50 border border-emerald-300 p-2.5 rounded-xl text-[10.5px] text-emerald-950 flex items-start gap-1.5 leading-snug">
+                    <span className="text-base shrink-0">🌱</span>
                     <span>
-                      <strong>High Mountain Downpour Risk:</strong> Steep topography accelerates torrential runoff (&quot;Pahari Dhol&quot;), swelling mountain river gorges and triggering flash floods and mudslides across Chittagong Hill Tracts &amp; Sylhet foothills.
+                      <strong>Zero Flood in Rain Mode:</strong> Precipitation ({rainMagnitudeMm} mm/day) is absorbed by agricultural fields, river channels, and drainage basins. Causes 0% flood and 0 displaced districts across all 64 regions.
                     </span>
                   </div>
                 )}
